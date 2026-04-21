@@ -21,3 +21,4 @@ Interact with your data through more than just text. The application features a 
 
 ## Goal
 The mission of Nutritional Partner is to provide high-fidelity dietary adherence by making nutritional data interactive, flexible, and always relevant to your immediate needs.
+

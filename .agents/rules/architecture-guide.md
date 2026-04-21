@@ -15,7 +15,15 @@ Act as a Senior Full-Stack Architect (10+ years experience). Follow these steps 
 
 ### 2. Implementation Planning
 - Generate a detailed markdown implementation plan including:
-  - **Folder Structure**: A visual tree of new and modified directories.
+  - **Folder Structure**: A visual tree of new and modified directories. All deployables must follow the split structure:
+    - `backend/<name>/source_code/`: Backend application logic and scripts.
+    - `backend/<name>/deployment/`: Backend Terraform, CICD yaml, and Dockerfiles.
+    - `frontend/<name>/source_code/`: Frontend application code.
+    - `frontend/<name>/deployment/`: Frontend Terraform, CICD yaml, and Dockerfiles.
+  - **Shared Infrastructure**: The root `infra/` directory must be used for cross-cutting resources:
+    - `infra/shared_resources/`: Terraform modules for shared GCP resources (Artifact Registry, Buckets, Networking).
+    - `infra/scripts/bootstrap.sh`: Initial setup script using `gcloud`.
+    - `infra/ci-lint.yaml`: Repository-wide linting pipeline.
   - **File Manifest**: A list of specific files to be created or edited.
   - **Documentation Task**: Ensure at least one new `.md` documentation file is planned for every user story.
 

@@ -22,7 +22,8 @@
             "version": "latest"
         },
         "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-        "ghcr.io/devcontainers/features/node:1": {}
+        "ghcr.io/devcontainers/features/node:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     // To use ssh credentials 
     "mounts": [

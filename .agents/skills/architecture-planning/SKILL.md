@@ -34,18 +34,23 @@ Before creation, present:
 | Issue to Create | Rationale | Scope | Stage | Dependency | DoD | Milestone |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 
-## 3. GitHub Issue Template
-Every issue description MUST follow:
+## 3. High-Fidelity GitHub Issues
+Every issue description MUST follow the strict template below. **MANDATORY**: Each issue must contain sufficient technical specifications, data schemas, and constraints to allow a senior developer to execute the task WITHOUT further clarification.
+
+### Issue Template
 > **User Story**
 > - **As a** [persona]
 > - **I want to** [action]
 > - **So that** [value/benefit]
 >
+> ## Technical Specifications & Constraints
+> - [Identify Scopes, Schemas, Algorithms, or GCP Services]
+>
 > ## Acceptance Criteria
 > - [ ] Criterion 1
-> - [ ] At least one documentation markdown file created/updated.
+> - [ ] [Measurable goal 2]
 >
-> ## Definition of Done
+> ## Definition of Done (DoD)
 > - [ ] Code reviewed, linted, and tests passed.
 > - [ ] **Documentation markdown file finalized and committed.**
 >

@@ -5,30 +5,29 @@ description: Manages Stage 2 (Deployment), including Terraform codification via 
 
 # Deployment Skill
 
-This skill governs the infrastructure codification and pipeline automation for the Nutritional Partner project.
+This skill governs the infrastructure codification and pipeline automation for the Nutritional Partner project, following Stage 2 of `@.agents/rules/development-guide.md`.
 
 ## 1. Terraform Codification (CFF)
-Implement infrastructure requirements in `backend/<name>/deployment/` or `frontend/<name>/deployment/`:
-- **Modules**: Exclusively use CFF modules.
-- **Shared Infrastructure**: Use `infra/shared_resources/` for global foundation resources (Networking, Registries, Buckets).
-- **Resources**: Ensure they match the logic approved in the Stage 1 Notebook.
-- **State**: Use the `<gcp-project-id>-tf-states` bucket.
+The infrastructure requirements proven in Stage 1 must be codified in:
+`backend/<deployable_name>/deployment/` or `frontend/<deployable_name>/deployment/`.
+- **Modules**: Exclusively use **Cloud Foundation Fabric (CFF)** modules.
+- **Validation**: Ensure all resources (GCS, BQ, etc.) match the logic approved in the Stage 1 Notebook.
 
-## 2. CI/CD Orchestration
-Manage triggers via `infra/scripts/cicd_triggers.sh`:
-- **PR Trigger (CI)**: `make lint`, `terraform plan`, verify Docker build.
-- **Merge Trigger (CD)**: Push to Artifact Registry, `terraform apply`, and deploy to Cloud Run/GKE.
-- **Constraint**: Triggers must NEVER be managed via Terraform.
+## 2. CI/CD Triggers
+All Cloud Build triggers must be created/updated via the centralized script:
+`infra/scripts/cicd_triggers.sh`.
+- **RULE**: Cloud Build triggers must **NEVER** be managed via Terraform. 
+- Triggers must be functional and tested before merging.
 
-## 3. Automation (Makefile)
-- Ensure all common activities (plan, deploy, lint) are wrapped in the root `Makefile`.
+## 3. Definition of Done (DoD)
+- Terraform modules applied successfully.
+- CI/CD triggers functional (tested via `cicd_triggers.sh`).
+- PR merged into `main`.
+
+## 4. Automation (Makefile)
+- Ensure all common activities (pan, deploy, lint) are wrapped in the root `Makefile`.
 - Context: Docker context should be the deployable root (e.g., `backend/name/`).
 
-## 4. Project Bootstrap
-When performing an initial setup, use `infra/scripts/bootstrap.sh`:
-- Create GCS state bucket.
-- Create CI/CD Service Account and IAM roles.
-- Initialize the `ci-lint` trigger.
-
 ## References
+- `@.agents/rules/development-guide.md` for lifecycle definitions.
 - `@.agents/rules/devops-guide.md` for GCP and state management standards.

@@ -28,6 +28,7 @@ All feature development must strictly follow the **`@.agents/rules/development-g
 ---
 
 ### 3. Standards & Domain Specifics
+*   **Coding Standards**: Follow `@.agents/rules/coding-guide.md`.
 *   **Backend**: Reference `@.agents/rules/backend-guide.md`.
 *   **Frontend**: Reference `@.agents/rules/frontend-guide.md`.
 *   **Infrastructure**: Reference `@.agents/rules/devops-guide.md`.

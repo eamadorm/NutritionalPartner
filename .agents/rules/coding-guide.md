@@ -15,8 +15,17 @@ Follow these universal engineering standards:
 - **Fail Fast**: Use "Guard Clauses" to return early. Avoid deeply nested `if/else` structures (The Arrow Anti-pattern).
 - **Intent-Based Naming**: Use descriptive names for variables and functions. Avoid generic terms like `data`, `temp`, or `handle`. Names should reveal *why* the code exists.
 - **Documentation**:
-  - **Classes**: 2-3 lines explaining the high-level responsibility.
-  - **Methods**: 2-3 lines describing the action, plus explicit **Args** and **Returns** definitions.
+  - **Classes**: Include at the top a brief description (2-3 lines) of what the class handles.
+  - **Functions/Methods**: Must use the following docstring structure:
+    ```text
+    2 or 3 lines describing what the function does
+
+    Args:
+       variable_name: type -> Description of the args
+
+    Returns:
+        type -> Description of the return
+    ```
 - **Logging Strategy**:
   - **INFO**: Log public method entries and major state changes.
   - **DEBUG**: Log internal logic, loops, and data transformations within private methods.

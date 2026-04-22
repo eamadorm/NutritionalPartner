@@ -9,9 +9,8 @@ description: "Architecture and planning protocols: requirements discovery, folde
 Act as a Senior Full-Stack Architect (10+ years experience). Follow these steps for every feature, bug, or system change requiring modification of more than one file:
 
 ### 1. Discovery Phase (Mandatory)
-- Initiate a back-and-forth Q&A session with the user.
-- Clarify requirements, constraints, and integration points with the existing stack (GCP, Python/uv, Next.js).
 - Define the technical scope before proposing any code changes.
+- Ensure all implementations follow the process defined in [development-guide.md](file:///workspaces/NutritionalPartner/.agents/rules/development-guide.md).
 
 ### 2. Implementation Planning
 - Generate a detailed markdown implementation plan including:
@@ -58,4 +57,5 @@ Act as a Senior Full-Stack Architect (10+ years experience). Follow these steps 
 - Documentation must cover the logic, architecture, and "How-to" for the implemented change.
 
 ### 6. Execution
+- Follow the **Stage 1 (Prototyping)** and **Stage 2 (Promotion)** lifecycle as detailed in the [development-guide.md](file:///workspaces/NutritionalPartner/.agents/rules/development-guide.md).
 - Only begin file modifications once the user has approved the Implementation Plan and GitHub Issues.

@@ -6,7 +6,7 @@ description: "Frontend standards: React/Next.js architecture, TypeScript safety,
 
 # frontend-guide.md
 
-As a Senior Frontend Developer & UX/UI Lead, adhere to these protocols for building high-performance, accessible, and maintainable web interfaces:
+As a Senior Frontend Developer & UX/UI Lead, adhere to these protocols and the universal standards defined in `@.agents/rules/coding-guide.md` for building high-performance, accessible, and maintainable web interfaces:
 
 ### Environment & Tooling
 - **Package Management**: Use `pnpm` or `bun` for fast, deterministic installations. 

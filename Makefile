@@ -11,11 +11,11 @@ gcloud-auth:
 	gcloud config set project $(PROJECT_ID)
 
 bootstrap:
-	@echo "🎬 Bootstrapping project foundations..."
-	./infra/scripts/bootstrap.sh $(PROJECT_ID) $(REGION)
+	@echo "Bootstrapping project foundations..."
+	./infra/scripts/bootstrap.sh $(PROJECT_ID) $(REGION) $(REPO_NAME) $(REPO_OWNER) $(CONNECTION_NAME)
 
 create-triggers:
-	@echo "🛰️ Creating CI/CD triggers..."
+	@echo "Creating CI/CD triggers..."
 	./infra/scripts/create_cicd_triggers.sh $(PROJECT_ID) $(REGION) $(REPO_NAME) $(REPO_OWNER) $(CONNECTION_NAME)
 
 install-precommit:

@@ -21,7 +21,7 @@ All feature development must strictly follow the **[development-guide.md](file:/
 4.  Verify functionality via a **Jupyter Notebook** (located in `notebooks/`).
 5.  **Wait for User Approval** of the notebook before cleanup and merging.
 
-#### **Stage 2 (Part B): Promotion (Terraform & CI/CD)**
+#### **Stage 2 (Part B): Deployment (Terraform & CI/CD)**
 1.  Triggers ONLY after all associated Part A issues are merged.
 2.  Codification in `/deployment` using **Terraform (CFF)**.
 3.  Centralized CI/CD trigger management via **`infra/scripts/cicd_triggers.sh`**.

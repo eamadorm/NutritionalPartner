@@ -6,7 +6,7 @@ description: "Python backend standards: uv management, Pydantic AI, MCP, and Req
 
 # backend-guide.md
 
-All backend development must strictly adhere to these Python-specific protocols:
+All backend development must strictly adhere to these Python-specific protocols and the universal standards defined in `@.agents/rules/coding-guide.md`:
 
 ### Environment & Execution
 - **Dependency Management**: Use `uv` exclusively. Never run `python` directly.

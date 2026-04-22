@@ -41,8 +41,8 @@ A Jupyter Notebook must be created to demonstrate the functionality:
 
 ### 4. Implementation Cycle
 For each component or feature, the implementation must follow this iterative loop:
-1.  **Logic Development**: Build the scripts in `/source_code`.
-2.  **Cybersecurity Audit**: Generate a `cybersec_report.md`. Address all findings until **0 High/Urgent** threats remain and **max 2 Medium** threats are reported.
+1.  **Logic Development**: Build the scripts in `/source_code`. **You MUST trigger `@.agents/skills/prototyping-logic/SKILL.md`** to orchestrate this logic development workflow.
+2.  **Cybersecurity Audit**: Generate a `cybersec_report.md` by triggering **`@.agents/skills/security-audit/SKILL.md`**. Address all findings according to **`@.agents/rules/cybersecurity-guide.md`** until **0 High/Urgent** threats remain and **max 2 Medium** threats are reported.
 3.  **Test Generation**: Create unit tests in `/tests/backend/<deployable_name>/` or `/tests/frontend/<deployable_name>/`.
     - Tests must follow the @/.agents/rules/tests-guide.md (Success, Failure, and Edge Cases).
     - Iterate until 100% of tests pass.
@@ -70,7 +70,7 @@ To maintain a clean and traceable history, follow these rules:
 ---
 
 ## Stage 2: Infrastructure Deployment
-Stage 2 begins only after Stage 1 is fully merged.
+Stage 2 begins only after Stage 1 is fully merged. **For executing any deployment tasks, you MUST trigger `@.agents/skills/deployment/SKILL.md`** and reference **`@.agents/rules/devops-guide.md`**.
 
 ### 1. Codification (Terraform)
 The infrastructure requirements proven in Stage 1 must be codified in:

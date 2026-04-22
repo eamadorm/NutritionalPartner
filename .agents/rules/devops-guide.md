@@ -22,7 +22,7 @@ Follow these protocols for Infrastructure as Code (IaC) and CI/CD orchestration:
   - **Single Environment**: Use a single-environment strategy for the MVP. No environment-specific bucket prefixes are required at this stage.
 
 ### CI/CD Pipelines (Cloud Build)
-- **Tooling**: Use **Cloud Build** with pipeline files located within each deployable's `/deployment` directory.
+- **Tooling**: Use **Cloud Build** with pipeline files located within each deployable's `/deployment` directory. Triggers must be created/managed via the centralized `infra/scripts/cicd_triggers.sh` script, **never** via Terraform.
 
 ### Bootstrap & Global CI
 - **Bootstrap Protocol**: The root `infra/scripts/bootstrap.sh` must be used for the Initial Setup of the GCP project. 
@@ -31,6 +31,7 @@ Follow these protocols for Infrastructure as Code (IaC) and CI/CD orchestration:
   - It creates the Service Account (SA) for CI/CD with necessary IAM roles.
   - It creates a single `ci-lint` trigger in Cloud Build using the root `infra/ci-lint.yaml` definition.
 - **Global CI**: The `infra/ci-lint.yaml` pipeline iterates and lints all files (TF, YAML, Python, TS) across the entire repository.
+- **Stage 2 Triggers**: For all application deployments, triggers must be added to `infra/scripts/cicd_triggers.sh`. These must be functional and validated before any branch is merged to `main`.
 - **Trigger Strategy**: Every deployable must have two path-based triggers (triggered only when files in that folder change):
   1. **CI (Pull Request)**:
      - Execute `make lint` (Code and Terraform linting).

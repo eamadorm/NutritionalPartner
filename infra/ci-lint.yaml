@@ -2,7 +2,7 @@ steps:
   # 1. Python Linting (Ruff)
   - name: "ghcr.io/astral-sh/ruff:latest"
     args: ["check", "."]
-    id: "python-lint"
+    id: "ruff-python-linter"
 
   # 2. Python Security (Bandit - High Severity Only)
   - name: "python:3.13-slim"
@@ -12,17 +12,17 @@ steps:
       - |
         pip install bandit
         bandit -lll -r .
-    id: "python-security"
+    id: "bandit-python-security-audit"
 
   # 3. Secret Scanning (Gitleaks)
   - name: "zricethezav/gitleaks:latest"
     args: ["detect", "--source", ".", "--verbose"]
-    id: "secret-scan"
+    id: "gitleaks-secret-detection"
 
   # 4. Multi-language Security (Semgrep)
   - name: "returntocorp/semgrep"
     args: ["semgrep", "scan", "--config", "auto", "--error"]
-    id: "semgrep-scan"
+    id: "semgrep-multi-language-scan"
 
   # 5. Frontend Linting (ESLint)
   - name: "node:22-slim"
@@ -34,7 +34,7 @@ steps:
         npm install -g pnpm
         pnpm install --no-frozen-lockfile
         pnpm lint
-    id: "frontend-lint"
+    id: "eslint-frontend-linter"
 
 options:
   logging: CLOUD_LOGGING_ONLY

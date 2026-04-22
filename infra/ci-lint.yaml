@@ -21,7 +21,7 @@ steps:
 
   # 4. Multi-language Security (Semgrep)
   - name: "returntocorp/semgrep"
-    args: ["semgrep", "scan", "--config", "auto", "--error"]
+    args: ["semgrep", "scan", "--config", "auto", "--error", "--quiet", "."]
     id: "semgrep-multi-language-scan"
 
   # 5. Frontend Linting (ESLint)

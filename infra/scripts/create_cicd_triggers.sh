@@ -81,7 +81,7 @@ create_cloudbuild_trigger() {
     "--repository=projects/${PROJECT_ID}/locations/${REGION}/connections/${CONNECTION_NAME}/repositories/${REPO_NAME}"
     "${EVENT_FLAG}=${PATTERN}"
     "--build-config=${YAML_CONFIG_FILE}"
-    "--service-account=${SERVICE_ACCOUNT}"
+    "--service-account=projects/${PROJECT_ID}/serviceAccounts/${SERVICE_ACCOUNT}"
   )
 
   # Add optional file filters

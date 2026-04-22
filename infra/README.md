@@ -13,7 +13,12 @@ Before running the bootstrap process, ensure the operator has the following:
     - `roles/serviceusage.serviceUsageAdmin` (to enable Required APIs).
     - `roles/cloudbuild.connectionAdmin` (Required to establish the **Run-Once** GitHub connection).
     - `roles/secretmanager.admin` (Required as Cloud Build stores 2nd gen connection secrets in Secret Manager).
-3. **gcloud CLI**: Authenticated via `gcloud auth login`.
+3. **gcloud CLI Setup**:
+    - **Recommended**: Run `make gcloud-auth` from the root of the repository.
+    - **Manual Alternative**:
+        1. Authenticate your session: `gcloud auth login`
+        2. Configure application default credentials: `gcloud auth application-default login`
+        3. Set your active project: `gcloud config set project your-project-id`
 
 ## Run-Once: GitHub to Cloud Build Connection
 
@@ -63,6 +68,23 @@ Run the script from the root of the repository:
   "<your-repo-name>" \
   "<your-github-handle>" \
   "github-connection"
+```
+
+## Cleanup
+
+If you need to teardown the foundational infrastructure, you can use the cleanup utility. 
+
+> [!CAUTION]
+> **Data Loss Warning**: The cleanup process will permanently delete the Terraform state bucket and all its contents. Make sure you have backed up any necessary state files if you intend to restore the environment later.
+
+### Method 1: Using Makefile (Recommended)
+```bash
+make cleanup PROJECT_ID=your-project-id [REGION=us-central1]
+```
+
+### Method 2: Direct Execution
+```bash
+./infra/scripts/cleanup.sh "your-project-id" "us-central1"
 ```
 
 ## What Bootstrap Does

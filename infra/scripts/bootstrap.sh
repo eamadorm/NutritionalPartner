@@ -6,7 +6,7 @@ PROJECT_ID="${1:-nutritional-partner}"
 REGION="${2:-us-central1}"
 REPO_NAME="${3:-NutritionalPartner}"
 REPO_OWNER="${4:-eamadorm}"
-CONNECTION_NAME="${5:-github-connection}"
+CONNECTION_NAME="${5:-eamadorm-github}"
 
 USER_EMAIL="eamadorm11@gmail.com"
 SA_NAME="cicd-pipeline-sa"
@@ -21,7 +21,7 @@ ROLES=(
   "roles/run.admin"
   "roles/iam.serviceAccountUser"
   "roles/iam.securityAdmin"
-  "roles/cloudresourcemanager.projectIamAdmin"
+  "roles/resourcemanager.projectIamAdmin"
 )
 
 # ==============================================================================
@@ -44,15 +44,15 @@ gcloud services enable \
 
 # 2. Create GCS Bucket for Terraform States
 echo "Creating GCS bucket for Terraform states: ${BUCKET_NAME}..."
-if ! gsutil ls -p "${PROJECT_ID}" "gs://${BUCKET_NAME}" >/dev/null 2>&1; then
-  gsutil mb -p "${PROJECT_ID}" -l "${REGION}" "gs://${BUCKET_NAME}"
+if ! gcloud storage buckets describe "gs://${BUCKET_NAME}" --project="${PROJECT_ID}" >/dev/null 2>&1; then
+  gcloud storage buckets create "gs://${BUCKET_NAME}" --project="${PROJECT_ID}" --location="${REGION}"
   echo "SUCCESS: Bucket created."
 else
   echo "INFO: Bucket already exists."
 fi
 
 echo "Enabling versioning on bucket..."
-gsutil versioning set on "gs://${BUCKET_NAME}"
+gcloud storage buckets update "gs://${BUCKET_NAME}" --versioning
 
 # 3. Create CI/CD Service Account
 echo "Creating Service Account: ${SA_NAME}..."
@@ -71,7 +71,8 @@ for ROLE in "${ROLES[@]}"; do
   echo "   - Binding ${ROLE}..."
   gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
     --member="serviceAccount:${SA_EMAIL}" \
-    --role="${ROLE}" >/dev/null
+    --role="${ROLE}" \
+    --condition=None >/dev/null
 done
 
 # 5. Grant Impersonation to Owner
@@ -79,7 +80,8 @@ echo "Granting Token Creator role to ${USER_EMAIL}..."
 gcloud iam service-accounts add-iam-policy-binding "${SA_EMAIL}" \
   --project="${PROJECT_ID}" \
   --member="user:${USER_EMAIL}" \
-  --role="roles/iam.serviceAccountTokenCreator" >/dev/null
+  --role="roles/iam.serviceAccountTokenCreator" \
+  --condition=None >/dev/null
 
 # 6. Initialize CI/CD Triggers
 echo "Initializing CI/CD Triggers..."

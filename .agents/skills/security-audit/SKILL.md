@@ -1,0 +1,30 @@
+---
+name: security-audit
+description: Conducts security audits, classifies risks (Urgent/High/Medium/Low), and generates the cybersec_report.md artifact. Trigger this skill during the Stage 1 implementation cycle.
+---
+
+# Security Audit Skill
+
+This skill governs the vulnerability assessment and threat reporting for the Nutritional Partner project.
+
+## 1. Threat Detection logic
+Analyze the task's code changes for vulnerabilities (e.g., hardcoded secrets, insecure API usage, overly permissive IAM).
+
+## 2. Report Generation
+Generate a `cybersec_report.md` at the root using this template:
+
+### Vulnerability Report
+| Risk Level | File(s) | Rationale | Possible Fix |
+| :--- | :--- | :--- | :--- |
+| **Urgent** | | | |
+| **High** | | | |
+| **Medium** | | | |
+| **Low** | | | |
+
+## 3. Remediation Loop
+- **Zero Tolerance**: You MUST eliminate all **High** and **Urgent** threats.
+- **Minimization**: Minimize **Medium** risks (max 2) before finalizing logic.
+- **Automation**: Automatically update the code until the skill reports a safe state.
+
+## References
+- `@.agents/rules/cybersecurity-guide.md` for secret hygiene and ADC standards.

@@ -23,4 +23,4 @@ uv run --group smae-engine python -m backend.smae_engine.source_code.main
   - `extraction_dead_letter`: Failure logging table.
 
 ## Standards
-Follows the project's [Resilient Ingestion Strategy](~/.gemini/antigravity/knowledge/resilient_ingestion/artifacts/strategy.md).
+Follows the project's **Resilient Ingestion Strategy** (Knowledge Item).

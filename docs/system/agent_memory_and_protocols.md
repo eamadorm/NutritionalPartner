@@ -42,7 +42,7 @@ graph LR
 
 The agent uses **Knowledge Items (KIs)** as its long-term repository memory.
 
-- **Location**: `~/.gemini/antigravity/knowledge/`
+- **Location**: The local Knowledge directory.
 - **Persistence**: Unlike conversation history, KIs are permanent and associated with this specific repository.
 - **Activation**: At the start of every session, the agent is instructed to scan the `knowledge/` directory for summaries that match the current task.
 
@@ -79,4 +79,4 @@ The agent's memory architecture is built upon the following core AI engineering 
 
 - **Persistent Context (RAG)**: The Knowledge Item (KI) system is a localized implementation of **Retrieval-Augmented Generation**. This allows the agent to retrieve relevant project-specific context (architectural decisions, rules) without needing to be retrained on the codebase. [RAG Overview](https://en.wikipedia.org/wiki/Retrieval-augmented_generation)
 - **Knowledge Item (KI) Schema**: Every memory entry follows a standardized structure (`metadata.json`, `artifacts/`, `timestamps.json`) designed for deterministic retrieval and human-auditability.
-- **Context Injection**: During the "Discovery Phase", the agent's system prompt mandates a scan of the `~/.gemini/antigravity/knowledge/` directory, which injects project-specific constraints into the active reasoning window.
+- **Context Injection**: During the "Discovery Phase", the agent's system prompt mandates a scan of the local Knowledge directory, which injects project-specific constraints into the active reasoning window.

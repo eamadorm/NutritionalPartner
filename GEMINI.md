@@ -40,7 +40,7 @@ All feature development must strictly follow the **`@.agents/rules/development-g
 
 ### 4. Knowledge Management
 *   **Architectural Memory**: Every repository-specific architectural decision (e.g., resilient ingestion patterns, specific BigQuery schemas, or complex business logic) that is not general enough for the universal `.agents/rules/` MUST be recorded as a **Knowledge Item (KI)**.
-*   **Storage**: KIs must be created in `~/.gemini/antigravity/knowledge/` to ensure persistence and automatic retrieval in future development iterations.
+*   **Storage**: KIs must be created in the local Knowledge directory to ensure persistence and automatic retrieval in future development iterations.
 
 ---
 

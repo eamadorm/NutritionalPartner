@@ -4,14 +4,13 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [
-    "pydantic",
-    "pydantic-settings",
-    "loguru",
-]
+dependencies = []
 
 [dependency-groups]
 smae-engine = [
+    "pydantic",
+    "pydantic-settings",
+    "loguru",
     "pypdf",
     "google-cloud-aiplatform",
     "google-cloud-storage",

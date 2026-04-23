@@ -18,6 +18,10 @@ Every deployable feature (e.g., `smae_engine`, `nutrient_agent`) must be split i
 - **Granularity**: If a feature is large, its Stage 1 (Part A) implementation must be split into multiple, smaller issues.
 - **Sequential Dependency**: A Stage 2 (Part B) issue can **ONLY** begin once **all** associated Stage 1 (Part A) issues have been solved and merged into the `main` branch.
 
+## Resilient Processing Standards
+- **Architectural Memory**: For domain-specific architectural patterns (e.g., ingestion resilience, SCD Type 2 strategies), always refer to the **Knowledge Items (KIs)** stored in the repository context.
+- **General Principle**: Prioritize modularity, failure isolation (DLQ), and idempotent re-processing for all data-heavy components.
+
 ---
 
 ## Stage 1: Prototyping (Mandatory)

@@ -34,7 +34,14 @@ All feature development must strictly follow the **`@.agents/rules/development-g
 *   **Infrastructure**: Reference `@.agents/rules/devops-guide.md`.
 *   **Quality Assurance**: Use `@.agents/rules/tests-guide.md`.
 *   **Security**: Follow `@.agents/rules/cybersecurity-guide.md`.
+*   **Standards Evolution**: Any general best practice or standard identified during development MUST be integrated into the corresponding guide in `.agents/rules/` to ensure continuous improvement of the universal protocols.
 
 ---
 
-> **Golden Rule**: Keep it simple. Follow the `@.agents/rules/development-guide.md` lifecycle without exceptions. Stage 2 (Part B) never begins until Stage 1 (Part A) is fully merged.
+### 4. Knowledge Management
+*   **Architectural Memory**: Every repository-specific architectural decision (e.g., resilient ingestion patterns, specific BigQuery schemas, or complex business logic) that is not general enough for the universal `.agents/rules/` MUST be recorded as a **Knowledge Item (KI)**.
+*   **Storage**: KIs must be created in `~/.gemini/antigravity/knowledge/` to ensure persistence and automatic retrieval in future development iterations.
+
+---
+
+> **Golden Rule**: Keep it simple. Follow the `@.agents/rules/development-guide.md` lifecycle without exceptions. **All guides and skills listed in this document are MANDATORY and must be activated/referenced during every phase of development.** Stage 2 (Part B) never begins until Stage 1 (Part A) is fully merged.

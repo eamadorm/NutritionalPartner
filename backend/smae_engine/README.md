@@ -22,5 +22,3 @@ uv run --group smae-engine python -m backend.smae_engine.source_code.main
   - `food_equivalents`: Success table (Partitioned by ingestion_at, SCD Type 2).
   - `extraction_dead_letter`: Failure logging table.
 
-## Standards
-Follows the project's **Resilient Ingestion Strategy** (Knowledge Item).

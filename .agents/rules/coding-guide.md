@@ -11,6 +11,7 @@ Follow these universal engineering standards:
 - **DRY & Simple**: Do not repeat logic. If a pattern appears three times, abstract it. Avoid overengineering; favor readability over "clever" code.
 - **OOP Principles**: Use Object-Oriented patterns to encapsulate state and behavior. Prefer **Composition over Inheritance**.
 - **Single Responsibility (SRP)**: Each class, module, and function must have one—and only one—reason to change.
+- **Validation Locality**: Do not spread validation logic across multiple layers. Use Pydantic models (backend) or Zod schemas (frontend) as the single source of truth for data integrity.
 - **Refactoring Rule**: Any function or method exceeding **50 lines** must be broken down into smaller, logical sub-functions.
 - **Fail Fast**: Use "Guard Clauses" to return early. Avoid deeply nested `if/else` structures (The Arrow Anti-pattern).
 - **Intent-Based Naming**: Use descriptive names for variables and functions. Avoid generic terms like `data`, `temp`, or `handle`. Names should reveal *why* the code exists.

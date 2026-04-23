@@ -16,6 +16,9 @@ All backend development must strictly adhere to these Python-specific protocols 
   - *Linting*: `uv run precommit`
 
 ### Data Architecture & Validation
+- **Pydantic-First Validation**: All data validation logic MUST reside exclusively within Pydantic models. 
+  - **Public Methods**: Must enforce validation by accepting or instantiating Pydantic models.
+  - **Private Methods**: Must assume data is already cleaned and validated; do not include redundant input validation unless Pydantic cannot handle it.
 - **Pydantic Usage**: 
   - Use `BaseSettings` for all configuration classes.
   - Use `BaseModel` for public method schemas.

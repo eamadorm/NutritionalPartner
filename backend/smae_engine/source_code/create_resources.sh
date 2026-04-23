@@ -15,6 +15,15 @@ gcloud config set project $PROJECT_ID
 echo "Creating GCS bucket $BUCKET_NAME..."
 gcloud storage buckets create gs://$BUCKET_NAME --location=$LOCATION
 
+# Grant Vertex AI service account viewer access to the bucket
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+VERTEX_AI_SA="service-$PROJECT_NUMBER@gcp-sa-aiplatform.iam.gserviceaccount.com"
+
+echo "Granting Vertex AI service account ($VERTEX_AI_SA) viewer access to gs://$BUCKET_NAME..."
+gcloud storage buckets add-iam-policy-binding gs://$BUCKET_NAME \
+    --member="serviceAccount:$VERTEX_AI_SA" \
+    --role="roles/storage.objectViewer"
+
 # 2. Create BQ Dataset
 echo "Creating BQ dataset $DATASET_ID..."
 bq --location=$LOCATION mk -d $DATASET_ID

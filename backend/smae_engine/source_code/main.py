@@ -1,4 +1,5 @@
 import re
+import os
 import uuid
 import time
 import json
@@ -153,6 +154,9 @@ class SMAEEngine:
             target_blob = self.storage_client.bucket(target_bucket).blob(target_path)
             target_blob.upload_from_filename(tmp_out.name)
 
+            logger.debug(
+                f"Created temporary blob: {target_path} ({os.path.getsize(tmp_out.name)} bytes)"
+            )
             return f"gs://{target_bucket}/{target_path}"
 
     def _process_page(
@@ -160,10 +164,10 @@ class SMAEEngine:
     ) -> list[FoodItem]:
         """Private method: assumes inputs are valid."""
         prompt = """
-        Analyze this SMAE table page.
-        Return a JSON list of objects.
-        Mandatory Keys: family_group, food, suggested_quantity, unit, gross_weight_grams, net_weight_grams, energy_kcal, protein_grams, lipids_grams, carbohidrates_grams, fiber_grams.
-        If NO table is found, return an empty list [].
+        Analyze this SMAE (Sistema Mexicano de Alimentos Equivalentes) table page.
+        Extract ALL food items and their nutritional values into a structured JSON list.
+        Mandatory JSON Keys: family_group, food, suggested_quantity, unit, gross_weight_grams, net_weight_grams, energy_kcal, protein_grams, lipids_grams, carbohidrates_grams, fiber_grams.
+        Ensure all numerical values are returned as numbers, not strings.
         """
 
         for attempt in range(3):
@@ -174,6 +178,11 @@ class SMAEEngine:
                 # Cleanup markdown and parse
                 clean_text = re.sub(r"```json\n?|\n?```", "", response.text).strip()
                 raw_items = json.loads(clean_text)
+                logger.debug(f"Page {page_number} raw items count: {len(raw_items)}")
+                if not raw_items:
+                    logger.warning(
+                        f"Page {page_number} returned no items. Raw text: {response.text}"
+                    )
 
                 processed_at = datetime.now(timezone.utc)
                 items = []

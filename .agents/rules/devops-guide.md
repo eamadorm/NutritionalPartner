@@ -13,6 +13,7 @@ Follow these protocols for Infrastructure as Code (IaC) and CI/CD orchestration:
 - **Terraform Standard**: 
   - Use [Cloud Foundation Fabric (CFF)](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric) modules for all resources.
   - Prioritize Terraform over `gcloud` commands for resource provisioning.
+- **Storage Operations**: Always use `gcloud storage` commands instead of `gsutil` for all manual Cloud Storage interactions.
 - **State Management**:
   - Store state in a GCS bucket named: `<gcp-project-id>-tf-states`.
   - **Structure**: `/tfstates/<deployment_name>/tf.state`.

@@ -4,4 +4,23 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "pydantic",
+    "pypdf",
+    "loguru",
+    "google-cloud-storage",
+    "google-cloud-bigquery"
+]
+
+[dependency-groups]
+smae-engine = [
+    "google-cloud-aiplatform",
+]
+dev = [
+    "pytest",
+    "pytest-mock",
+    "ruff",
+    "ipykernel",
+    "pandas",
+    "db-dtypes"
+]

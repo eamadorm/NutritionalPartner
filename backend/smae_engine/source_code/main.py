@@ -173,7 +173,10 @@ class SMAEEngine:
         for attempt in range(3):
             try:
                 doc = Part.from_uri(uri=page_uri, mime_type="application/pdf")
-                response = self.model.generate_content([doc, prompt])
+                response = self.model.generate_content(
+                    [doc, prompt],
+                    generation_config={"response_mime_type": "application/json"},
+                )
 
                 # Cleanup markdown and parse
                 clean_text = re.sub(r"```json\n?|\n?```", "", response.text).strip()
@@ -195,6 +198,12 @@ class SMAEEngine:
                     items.append(item)
 
                 return items
+            except json.JSONDecodeError as je:
+                logger.error(
+                    f"Page {page_number} JSON parse error: {str(je)}. Raw text: {response.text}"
+                )
+                if attempt == 2:
+                    raise je
             except Exception as e:
                 if attempt == 2:
                     raise e

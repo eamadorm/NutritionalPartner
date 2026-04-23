@@ -41,9 +41,9 @@ If the scripts require GCP resources (GCS, BigQuery, Secret Manager only), they 
 
 ### 3. Verification Protocol (Notebooks)
 A Jupyter Notebook must be created to demonstrate the functionality:
-- **Location**: `notebooks/<deployable_name>/<notebook_name>.ipynb`.
+- **Location**: `backend/notebooks/<deployable_name>/<notebook_name>.ipynb` or `frontend/notebooks/<deployable_name>/<notebook_name>.ipynb`.
 - **Requirements**:
-  - Must use `import sys; sys.path.append("<relative_path_to_root>")` to correctly import modules from the project root (e.g., `sys.path.append("../..")` if the notebook is two levels deep).
+  - Must use `import sys; sys.path.append("<relative_path_to_root>")` to correctly import modules from the project root (e.g., `sys.path.append("../../..")` if the notebook is three levels deep).
   - Must show successful execution, edge case handling, and data validation.
 
 ### 4. Implementation Cycle

@@ -8,7 +8,7 @@ The SMAE Engine is designed to process complex nutritional PDFs (SMAE tables) by
 ## Structure
 - `source_code/`: Main Python implementation and schemas.
 - `tests/`: Unit tests (backend/smae_engine/).
-- `notebooks/`: Verification notebooks for manual prototyping.
+- `notebooks/`: Verification notebooks for manual prototyping (under `backend/notebooks/`).
 
 ## Usage
 To run the engine locally:

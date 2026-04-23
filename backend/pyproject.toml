@@ -6,15 +6,15 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "pydantic",
-    "pypdf",
     "loguru",
-    "google-cloud-storage",
-    "google-cloud-bigquery"
 ]
 
 [dependency-groups]
 smae-engine = [
+    "pypdf",
     "google-cloud-aiplatform",
+    "google-cloud-storage",
+    "google-cloud-bigquery",
 ]
 dev = [
     "pytest",

@@ -31,3 +31,10 @@ install-precommit:
 
 run-precommit:
 	uvx pre-commit run --all-files
+### SMAE Engine Commands ###
+
+smae-test:
+uv run --group smae-engine pytest tests/backend/smae_engine/
+
+smae-lint:
+uv run ruff check backend/smae_engine/source_code/

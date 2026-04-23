@@ -1,0 +1,25 @@
+[project]
+name = "smae-engine"
+version = "0.1.0"
+description = "SMAE Nutritional Data Extraction Engine"
+dependencies = [
+    "pydantic",
+    "pypdf",
+    "loguru"
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+smae-engine = [
+    "google-cloud-aiplatform",
+    "google-cloud-storage",
+    "google-cloud-bigquery"
+]
+dev = [
+    "pytest",
+    "pytest-mock",
+    "ruff",
+    "ipykernel"
+]

@@ -31,6 +31,9 @@ The goal of Stage 1 is to prove the logic works using manual infrastructure befo
 All application logic, scripts, and processing code must reside in:
 `backend/<deployable_name>/source_code/` or `frontend/<deployable_name>/source_code/`.
 
+- **Mandatory README**: Each deployable directory MUST include a `README.md` explaining its purpose, structure, and local execution commands.
+- **Documentation Integrity**: After every feature update or new implementation, the agent MUST verify that all related documentation (READMEs, modules docs, and system protocols) is synchronized and accurate.
+
 ### 2. Manual Infrastructure Scripts
 If the scripts require GCP resources (GCS, BigQuery, Secret Manager only), they must be managed via two bash scripts in the deployable root:
 - `create_resources.sh`: Contains `gcloud` commands to create the environment.

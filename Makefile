@@ -31,3 +31,7 @@ install-precommit:
 
 run-precommit:
 	uvx pre-commit run --all-files
+
+run-smae-engine:
+	@echo "Running SMAE Engine locally..."
+	cd backend && uv run --group smae python -m smae_engine.source_code.main

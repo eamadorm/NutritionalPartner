@@ -5,3 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
+
+[dependency-groups]
+smae = [
+    "google-auth>=2.49.2",
+    "google-genai>=1.73.1",
+    "loguru>=0.7.3",
+    "pydantic>=2.13.3",
+    "pydantic-ai>=1.87.0",
+    "pytest>=9.0.3",
+]

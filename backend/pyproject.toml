@@ -12,7 +12,7 @@ smae-engine = [
     "pydantic-settings",
     "loguru",
     "pypdf",
-    "google-cloud-aiplatform",
+    "google-genai",
     "google-cloud-storage",
     "google-cloud-bigquery",
 ]

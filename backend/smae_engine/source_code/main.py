@@ -8,8 +8,8 @@ from datetime import datetime, timezone
 from typing import Optional
 from loguru import logger
 
-import vertexai
-from vertexai.generative_models import GenerativeModel, Part
+from google import genai
+from google.genai import types
 from google.cloud import storage, bigquery
 from pypdf import PdfReader, PdfWriter
 
@@ -37,9 +37,11 @@ class SMAEEngine:
         """
         self.config = config or SMAEConfig()
 
-        vertexai.init(project=self.config.PROJECT_ID, location=self.config.LOCATION)
-
-        self.model = GenerativeModel(self.config.MODEL_NAME)
+        self.genai_client = genai.Client(
+            vertexai=True,
+            project=self.config.PROJECT_ID,
+            location=self.config.LOCATION,
+        )
         self.storage_client = storage.Client(project=self.config.PROJECT_ID)
         self.bq_client = bigquery.Client(project=self.config.PROJECT_ID)
 
@@ -172,10 +174,15 @@ class SMAEEngine:
 
         for attempt in range(3):
             try:
-                doc = Part.from_uri(uri=page_uri, mime_type="application/pdf")
-                response = self.model.generate_content(
-                    [doc, prompt],
-                    generation_config={"response_mime_type": "application/json"},
+                doc = types.Part.from_uri(
+                    file_uri=page_uri, mime_type="application/pdf"
+                )
+                response = self.genai_client.models.generate_content(
+                    model=self.config.MODEL_NAME,
+                    contents=[doc, prompt],
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json"
+                    ),
                 )
 
                 # Cleanup markdown and parse

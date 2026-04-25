@@ -9,10 +9,9 @@ from datetime import datetime, timezone
 @pytest.fixture
 def mock_engine():
     with (
-        patch("backend.smae_engine.source_code.main.vertexai.init"),
+        patch("backend.smae_engine.source_code.main.genai.Client"),
         patch("backend.smae_engine.source_code.main.storage.Client"),
         patch("backend.smae_engine.source_code.main.bigquery.Client"),
-        patch("backend.smae_engine.source_code.main.GenerativeModel"),
     ):
         yield SMAEEngine()
 
@@ -52,7 +51,9 @@ def test_generate_food_uuid_consistency():
 def test_page_parsing_failure_raises_exception(mock_engine):
     """Verify that a page parsing error propagates (the run method handles logging)."""
     # Mocking a failed extraction
-    mock_engine.model.generate_content.side_effect = Exception("API Error")
+    mock_engine.genai_client.models.generate_content.side_effect = Exception(
+        "API Error"
+    )
 
     with pytest.raises(Exception):
         mock_engine._process_page("gs://test/file.pdf", 1, "gs://test/source.pdf")
@@ -65,7 +66,7 @@ def test_successful_extraction_returns_items(mock_engine):
 
     # The response is actually a list of JSON items
     mock_response.text = "[" + mock_response.text + "]"
-    mock_engine.model.generate_content.return_value = mock_response
+    mock_engine.genai_client.models.generate_content.return_value = mock_response
 
     items = mock_engine._process_page("gs://test/file.pdf", 1, "gs://test/source.pdf")
     assert len(items) == 1

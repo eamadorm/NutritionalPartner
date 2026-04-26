@@ -44,5 +44,5 @@ USER nutri-user
 EXPOSE 8080
 
 # Run the web service on container startup.
-# Use gunicorn as the production WSGI server.
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "0", "backend.smae_engine.source_code.main:app"]
+# Use uvicorn as the production ASGI server.
+CMD ["uvicorn", "backend.smae_engine.source_code.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]

@@ -1,43 +1,38 @@
 import os
 import sys
-from flask import Flask, request, jsonify
+import uvicorn
+from fastapi import FastAPI, HTTPException
 from loguru import logger
-from pydantic import ValidationError
 
 from backend.smae_engine.source_code.pipeline import IngestionPipeline
-from backend.smae_engine.source_code.schemas import ExtractionRequest
+from backend.smae_engine.source_code.schemas import (
+    ExtractionRequest,
+    ExtractionResponse,
+)
 
-# Initialize Flask app
-app = Flask(__name__)
+# Initialize FastAPI app
+app = FastAPI(
+    title="SMAE Ingestion Engine",
+    description="Vertex AI powered nutritional PDF extraction pipeline",
+    version="1.0.0",
+)
 
 
-@app.route("/", methods=["POST"])
-def smae_handler():
+@app.post("/", response_model=ExtractionResponse)
+async def smae_handler(request: ExtractionRequest):
     """
-    HTTP entry point for the SMAE ingestion pipeline.
-    Parses the JSON body into an ExtractionRequest, runs the pipeline, and
-    returns the serialized ExtractionResponse on success.
-
-    Returns:
-        Response -> JSON body and HTTP status code.
+    HTTP POST entry point for the SMAE ingestion pipeline.
+    FastAPI automatically validates the request body against the ExtractionRequest model.
     """
     logger.info("SMAE handler invoked via HTTP")
     try:
-        payload = request.get_json(silent=True) or {}
-        extraction_request = ExtractionRequest.model_validate(payload)
-    except ValidationError as exc:
-        logger.warning(f"Request validation failed: {exc.error_count()} error(s)")
-        return jsonify(
-            {"error": "Invalid request payload", "details": exc.errors()}
-        ), 400
-
-    try:
         pipeline = IngestionPipeline()
-        result = pipeline.run(extraction_request)
-        return result.model_dump_json(), 200, {"Content-Type": "application/json"}
+        # FastAPI handles model validation and serialization automatically
+        result = pipeline.run(request)
+        return result
     except Exception:
         logger.exception("Unhandled error in smae_handler")
-        return jsonify({"error": "Internal server error"}), 500
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 def run_cli():
@@ -67,6 +62,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1].startswith("gs://"):
         run_cli()
     else:
-        # Local development server (SECURITY: debug=False for production readiness)
+        # Local development server
         port = int(os.environ.get("PORT", 8080))
-        app.run(host="0.0.0.0", port=port, debug=False)
+        uvicorn.run(app, host="0.0.0.0", port=port)

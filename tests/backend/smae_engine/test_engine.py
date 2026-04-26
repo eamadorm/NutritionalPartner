@@ -12,6 +12,7 @@ from backend.smae_engine.source_code.schemas import (
     ExtractionResponse,
     ExtractResponse,
     FoodItem,
+    LoadResponse,
     TransformResponse,
     VerificationResponse,
 )
@@ -467,6 +468,12 @@ def test_run_orchestrates_extract_transform_verify_in_order(mocker, sample_item)
         pipeline, "verify", return_value=verification_response
     )
 
+    mock_load = mocker.patch.object(
+        pipeline,
+        "load",
+        return_value=LoadResponse(rows_inserted=1, rows_failed=0, dead_letter_rows=0),
+    )
+
     response = pipeline.run(request)
 
     assert isinstance(response, ExtractionResponse)
@@ -479,6 +486,7 @@ def test_run_orchestrates_extract_transform_verify_in_order(mocker, sample_item)
     verify_arg = mock_verify.call_args.args[0]
     assert isinstance(verify_arg, ExtractionResponse)
     assert verify_arg.items == [sample_item]
+    mock_load.assert_called_once_with(transform_response, source_uri=request.gcs_uri)
 
 
 def test_run_propagates_validation_error_without_calling_extract(mocker):
@@ -497,7 +505,7 @@ def test_run_propagates_validation_error_without_calling_extract(mocker):
     mock_verify.assert_not_called()
 
 
-# --- ExtractionRequest.page_range validator ---
+# --- run() routing ---
 
 
 def test_extraction_request_accepts_valid_page_range():
@@ -738,6 +746,11 @@ def test_run_routes_to_extract_parallel_when_page_range_given(mocker, sample_ite
         "verify",
         return_value=VerificationResponse(status="valid", items_count=1),
     )
+    mocker.patch.object(
+        pipeline,
+        "load",
+        return_value=LoadResponse(rows_inserted=1, rows_failed=0, dead_letter_rows=0),
+    )
 
     pipeline.run(request)
 
@@ -766,6 +779,11 @@ def test_run_routes_to_extract_parallel_when_pages_list_given(mocker, sample_ite
         pipeline,
         "verify",
         return_value=VerificationResponse(status="valid", items_count=1),
+    )
+    mocker.patch.object(
+        pipeline,
+        "load",
+        return_value=LoadResponse(rows_inserted=1, rows_failed=0, dead_letter_rows=0),
     )
 
     pipeline.run(request)
@@ -834,3 +852,109 @@ def test_resolve_pages_raises_on_malformed_pdf(pipeline):
     request = ExtractionRequest(gcs_uri="gs://nutritional-data-sources/smae.pdf")
     with pytest.raises(ValueError, match="Unable to parse source PDF"):
         pipeline._resolve_pages(request, b"this is not a pdf")
+
+
+# --- TestLoad ---
+
+
+class TestLoad:
+    """Unit tests for IngestionPipeline.load() — BQ persistence with SCD Type 2."""
+
+    @pytest.fixture
+    def pipeline_with_settings(self) -> IngestionPipeline:
+        return IngestionPipeline(
+            settings=SmaeSettings(
+                trusted_bucket="nutritional-data-sources",
+                bq_project="test-project",
+                bq_dataset="nutrimental_information",
+                bq_table="food_equivalents",
+                bq_dead_letter_table="food_equivalents_dead_letter",
+                bq_batch_size=500,
+            )
+        )
+
+    @pytest.fixture
+    def sample_transform_response(self) -> TransformResponse:
+        item = FoodItem(
+            food_uuid="uuid-apple",
+            food="Apple",
+            energy_kcal=52,
+            ingested_at=datetime.now(timezone.utc),
+        )
+        return TransformResponse(items=[item])
+
+    def test_Load_ShouldInsertAllRows_WhenBQSucceeds(
+        self, mocker, pipeline_with_settings, sample_transform_response
+    ):
+        """Happy path: load_table_from_json job completes without errors."""
+        mock_job = mocker.Mock()
+        mock_job.result.return_value = None
+
+        mock_bq = mocker.Mock()
+        mock_bq.query.return_value = mocker.Mock(**{"result.return_value": None})
+        mock_bq.load_table_from_json.return_value = mock_job
+
+        pipeline_with_settings._bq_client = mock_bq
+        pipeline_with_settings._settings = pipeline_with_settings._settings.model_copy(
+            update={"bq_project": "test-project"}
+        )
+
+        result = pipeline_with_settings.load(
+            sample_transform_response,
+            source_uri="gs://nutritional-data-sources/smae.pdf",
+        )
+
+        assert isinstance(result, LoadResponse)
+        assert result.rows_inserted == 1
+        assert result.rows_failed == 0
+        assert result.dead_letter_rows == 0
+        mock_bq.load_table_from_json.assert_called_once()
+        mock_bq.query.assert_called_once()
+
+    def test_Load_ShouldWriteToDLT_WhenJobFails(
+        self, mocker, pipeline_with_settings, sample_transform_response
+    ):
+        """Edge case: load job raises GoogleAPIError; rows must be routed to DLT."""
+        from google.api_core.exceptions import GoogleAPIError
+
+        mock_dlt_job = mocker.Mock()
+        mock_dlt_job.result.return_value = None
+
+        mock_bq = mocker.Mock()
+        mock_bq.query.return_value = mocker.Mock(**{"result.return_value": None})
+        mock_bq.load_table_from_json.side_effect = [
+            GoogleAPIError("BQ job failed"),  # main table fails
+            mock_dlt_job,  # DLT write succeeds
+        ]
+
+        pipeline_with_settings._bq_client = mock_bq
+        pipeline_with_settings._settings = pipeline_with_settings._settings.model_copy(
+            update={"bq_project": "test-project"}
+        )
+
+        result = pipeline_with_settings.load(
+            sample_transform_response,
+            source_uri="gs://nutritional-data-sources/smae.pdf",
+        )
+
+        assert result.rows_inserted == 0
+        assert result.rows_failed == 1
+        assert result.dead_letter_rows == 1
+        assert mock_bq.load_table_from_json.call_count == 2
+
+    def test_Load_ShouldRaiseRuntimeError_WhenBQClientFails(
+        self, mocker, pipeline_with_settings, sample_transform_response
+    ):
+        """Failure mode: bigquery.Client() raises TransportError on construction."""
+        from google.auth.exceptions import TransportError
+
+        mocker.patch(
+            "backend.smae_engine.source_code.main.google.auth.default",
+            side_effect=TransportError("Cannot reach metadata server"),
+        )
+
+        with pytest.raises(TransportError, match="Cannot reach metadata server"):
+            pipeline_with_settings.load(
+                sample_transform_response,
+                source_uri="gs://nutritional-data-sources/smae.pdf",
+            )

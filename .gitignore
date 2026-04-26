@@ -211,3 +211,7 @@ __marimo__/
 # pnpm and Node
 .pnpm-store/
 node_modules/
+
+# Terraform
+.terraform/
+.terraform.lock.hcl

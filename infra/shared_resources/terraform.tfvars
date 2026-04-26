@@ -1,0 +1,6 @@
+project_id               = "nutritional-partner"
+region                   = "us-central1"
+artifact_registry_name   = "nutritional-partner-images"
+data_sources_bucket_name = "nutritional-data-sources"
+bq_dataset_id            = "nutrimental_information"
+bq_dataset_location      = "US"

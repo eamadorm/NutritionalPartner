@@ -7,7 +7,7 @@ provider "google" {
 # Artifact Registry — Docker repository for all deployable images
 # ---------------------------------------------------------------------------
 module "artifact_registry" {
-  source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/artifact-registry?ref=v34.1.0"
+  source     = "../modules/artifact-registry"
   project_id = var.project_id
   location   = var.region
   name       = var.artifact_registry_name
@@ -21,7 +21,7 @@ module "artifact_registry" {
 # GCS Bucket — source PDF uploads and raw nutritional data files
 # ---------------------------------------------------------------------------
 module "nutritional_data_sources_bucket" {
-  source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gcs?ref=v34.1.0"
+  source     = "../modules/gcs"
   project_id = var.project_id
   name       = var.data_sources_bucket_name
   location   = var.region
@@ -32,7 +32,7 @@ module "nutritional_data_sources_bucket" {
 # BigQuery Dataset + Tables — nutritional information warehouse
 # ---------------------------------------------------------------------------
 module "nutrimental_information_dataset" {
-  source      = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/bigquery-dataset?ref=v34.1.0"
+  source      = "../modules/bigquery-dataset"
   project_id  = var.project_id
   id          = var.bq_dataset_id
   location    = var.bq_dataset_location

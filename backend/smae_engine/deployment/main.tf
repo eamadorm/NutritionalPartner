@@ -7,7 +7,7 @@ provider "google" {
 # Service Account — dedicated identity for the SMAE Engine function
 # ---------------------------------------------------------------------------
 module "smae_engine_sa" {
-  source       = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/iam-service-account?ref=v34.1.0"
+  source       = "../../../infra/modules/iam-service-account"
   project_id   = var.project_id
   name         = var.sa_name
   display_name = "SMAE Engine SA"
@@ -22,7 +22,7 @@ module "smae_engine_sa" {
 # Cloud Function v2 — HTTP-triggered, containerised SMAE extraction pipeline
 # ---------------------------------------------------------------------------
 module "smae_engine_function" {
-  source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-function-v2?ref=v34.1.0"
+  source     = "../../../infra/modules/cloud-function-v2"
   project_id = var.project_id
   region     = var.region
   name       = var.function_name

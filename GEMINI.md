@@ -27,6 +27,7 @@ All feature development must strictly follow the **`@.agents/rules/development-g
 - **CI/CD Separation**: CI runs tests + docker build (local) + `terraform validate`. CD runs docker build + push + `terraform apply` only — **no tests in CD**.
 - **SA Permissions**: Before finalizing any CI/CD pipeline, verify the executing service account (`cicd-pipeline-sa`) has all required IAM roles. Missing roles must be added to `infra/scripts/bootstrap.sh` — **never to Terraform**.
 - **Regional Standard**: All resources must deploy to `us-central1` by default. Any regional variation must be explicitly defined via variables with a fallback to the main region.
+- **Module Vendoring**: All CFF modules must be vendored locally in `infra/modules/` from a stable version (v34.1.0) to ensure reliable deployments.
 
 ---
 

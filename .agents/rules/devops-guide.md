@@ -120,7 +120,7 @@ substitutions:
   _REGION: us-central1
 
 steps:
-  - name: 'hashicorp/terraform:1.x'
+  - name: 'hashicorp/terraform:1.9'
     entrypoint: 'sh'
     args:
       - '-c'

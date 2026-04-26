@@ -28,7 +28,7 @@ steps:
       - "smae-engine-docker-build-push"
 
   # 2. Terraform init — inject backend bucket established in bootstrap.sh
-  - name: "hashicorp/terraform:1.x"
+  - name: "hashicorp/terraform:1.9"
     entrypoint: sh
     args:
       - -c
@@ -42,7 +42,7 @@ steps:
       - "smae-engine-docker-push"
 
   # 3. Terraform apply — deploy service with the image built in this run
-  - name: "hashicorp/terraform:1.x"
+  - name: "hashicorp/terraform:1.9"
     entrypoint: sh
     args:
       - -c

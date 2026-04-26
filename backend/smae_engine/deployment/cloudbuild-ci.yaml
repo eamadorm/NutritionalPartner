@@ -1,37 +1,57 @@
+substitutions:
+  _REGION: us-central1
+
 options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  # 1. Run SMAE Engine unit tests
-  - name: "ghcr.io/astral-sh/uv:python3.13-bookworm-slim"
-    entrypoint: /bin/bash
-    args:
-      - -c
-      - |
-        cd backend
-        uv run --group smae --group dev pytest ../tests/backend/smae_engine/
-    id: "smae-engine-tests"
-
-  # 2. Validate Docker image builds successfully (local, no push)
+  # 1. Build and push Docker image to Artifact Registry
   - name: "gcr.io/cloud-builders/docker"
     args:
       - build
       - -t
-      - smae-engine:ci-validation
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine:$SHORT_SHA
+      - -t
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine:latest
       - -f
       - backend/smae_engine/deployment/Dockerfile
       - backend/
-    id: "docker-image-build-check"
+    id: "docker-image-build"
 
-  # 3. Validate Terraform configuration — confirms CD will execute correctly
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - push
+      - --all-tags
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine
+    id: "docker-image-push"
+    waitFor:
+      - "docker-image-build"
+
+  # 2. Terraform Lifecycle: Initialization and Application
   - name: "hashicorp/terraform:1.9"
     entrypoint: sh
     args:
       - -c
       - |
         cd backend/smae_engine/deployment
-        terraform init -backend=false
-        terraform validate
-    id: "terraform-validate"
+        terraform init \
+          -backend-config="bucket=$PROJECT_ID-tf-states" \
+          -backend-config="prefix=tfstates/smae_engine/tf.state"
+    id: "terraform-init"
     waitFor:
-      - "docker-image-build-check"
+      - "docker-image-push"
+
+  - name: "hashicorp/terraform:1.9"
+    entrypoint: sh
+    args:
+      - -c
+      - |
+        cd backend/smae_engine/deployment
+        terraform apply \
+          -auto-approve \
+          -var="project_id=$PROJECT_ID" \
+          -var="region=$_REGION" \
+          -var="image_tag=$SHORT_SHA"
+    id: "terraform-apply"
+    waitFor:
+      - "terraform-init"

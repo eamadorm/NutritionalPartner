@@ -1,5 +1,7 @@
-project_id             = "nutritional-partner"
-region                 = "us-central1"
+# Project-level variables are injected via CI/CD pipelines
+# project_id = "..."
+# region     = "..."
+
 image_tag              = "latest"
 sa_name                = "smae-engine-sa"
 function_name          = "smae-engine"

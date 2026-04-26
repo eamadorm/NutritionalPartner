@@ -26,4 +26,5 @@ variable "bq_dataset_id" {
 variable "bq_dataset_location" {
   description = "BigQuery dataset location (multi-region or regional, e.g. US)"
   type        = string
+  default     = null
 }

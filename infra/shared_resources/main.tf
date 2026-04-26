@@ -35,7 +35,7 @@ module "nutrimental_information_dataset" {
   source      = "../modules/bigquery-dataset"
   project_id  = var.project_id
   id          = var.bq_dataset_id
-  location    = var.bq_dataset_location
+  location    = coalesce(var.bq_dataset_location, var.region)
   description = "Nutritional information extracted from SMAE PDFs"
 
   tables = {

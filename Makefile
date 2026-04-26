@@ -35,3 +35,38 @@ run-precommit:
 run-smae-engine:
 	@echo "Running SMAE Engine locally..."
 	cd backend && uv run --group smae python -m smae_engine.source_code.main
+
+### SMAE Engine ###
+
+IMAGE_TAG ?= latest
+SMAE_IMAGE = us-central1-docker.pkg.dev/$(PROJECT_ID)/nutritional-partner-images/smae-engine
+
+test-smae-engine:
+	@echo "Running SMAE Engine tests..."
+	cd backend && uv run pytest ../tests/backend/smae_engine/
+
+build-smae-engine-local:
+	@echo "Building SMAE Engine image (local validation only)..."
+	docker build \
+		-t smae-engine:local \
+		-f backend/smae_engine/deployment/Dockerfile \
+		backend/
+
+build-smae-engine:
+	@echo "Building and pushing SMAE Engine image..."
+	docker build \
+		-t $(SMAE_IMAGE):$(IMAGE_TAG) \
+		-f backend/smae_engine/deployment/Dockerfile \
+		backend/
+	docker push $(SMAE_IMAGE):$(IMAGE_TAG)
+
+deploy-smae-engine:
+	@echo "Deploying SMAE Engine to Cloud Functions v2..."
+	gcloud functions deploy smae-engine \
+		--gen2 \
+		--region=$(REGION) \
+		--project=$(PROJECT_ID) \
+		--image=$(SMAE_IMAGE):$(IMAGE_TAG) \
+		--service-account=smae-engine-sa@$(PROJECT_ID).iam.gserviceaccount.com \
+		--trigger-http \
+		--no-allow-unauthenticated

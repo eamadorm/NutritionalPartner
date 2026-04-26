@@ -135,6 +135,23 @@ import sys; sys.path.append("<relative_path_to_repo_root>")
 ```
 to import project modules (e.g., `sys.path.append("../..")` for two levels deep). Notebooks must demonstrate successful execution, edge cases, and data validation.
 
+## Mandatory Subagent Protocol
+
+On **every** user prompt, evaluate the available subagents before composing a reply. Launch any that match the task — do not skip:
+
+| Trigger | Agent |
+|---------|-------|
+| Writing or reviewing backend Python code | `backend-dev-specialist` |
+| Writing or reviewing frontend code | `senior-frontend-dev` |
+| Any security-sensitive code (auth, input handling, IAM, secrets) | `cybersec-sentinel` |
+| Terraform, Cloud Build, Docker, GCP infra | `devops-engineer` |
+| Architecture or technology decisions | `software-architect` |
+| New or modified code that needs validation | `test-runner` |
+| Codebase exploration spanning multiple files | `Explore` |
+| Implementation planning before coding | `Plan` |
+
+Multiple agents may run in parallel for independent concerns. Only skip if the prompt is purely conversational with zero technical content.
+
 ## Agent Rules Reference
 
 Domain standards are in `.agents/rules/` and apply to all code in this repo:

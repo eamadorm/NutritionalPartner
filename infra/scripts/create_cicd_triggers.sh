@@ -109,10 +109,13 @@ create_cloudbuild_trigger() {
 # Patterns: Name|EventFlag|Pattern|Included|Ignored|SA|ConfigFile
 CI_TRIGGERS=(
   "ci-linting|--pull-request-pattern|^main$||**/*.md,.gitignore,LICENSE|${DEFAULT_SA}|infra/ci-lint.yaml"
+  "smae-engine-ci|--pull-request-pattern|^main$|backend/smae_engine/**||${DEFAULT_SA}|backend/smae_engine/deployment/cloudbuild-ci.yaml"
 )
 
 # CD Triggers (Merge to Main focus)
-CD_TRIGGERS=()
+CD_TRIGGERS=(
+  "smae-engine-cd|--branch-pattern|^main$|backend/smae_engine/**||${DEFAULT_SA}|backend/smae_engine/deployment/cloudbuild-cd.yaml"
+)
 
 # ==============================================================================
 # Execution Loop

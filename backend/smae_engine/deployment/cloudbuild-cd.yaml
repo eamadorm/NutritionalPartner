@@ -1,0 +1,68 @@
+steps:
+  # 1. Run SMAE Engine unit tests before building or deploying
+  - name: "ghcr.io/astral-sh/uv:python3.13-bookworm-slim"
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        cd backend
+        uv run pytest ../tests/backend/smae_engine/
+    id: "smae-engine-tests"
+
+  # 2. Build and push Docker image to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine:$SHORT_SHA
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine:latest
+      - -f
+      - backend/smae_engine/deployment/Dockerfile
+      - backend/
+    id: "smae-engine-docker-build-push"
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - push
+      - --all-tags
+      - us-central1-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine
+    id: "smae-engine-docker-push"
+    waitFor:
+      - "smae-engine-docker-build-push"
+
+  # 3. Terraform init — inject backend bucket established in bootstrap.sh
+  - name: "hashicorp/terraform:1.9"
+    entrypoint: sh
+    args:
+      - -c
+      - |
+        cd backend/smae_engine/deployment
+        terraform init \
+          -backend-config="bucket=$PROJECT_ID-tf-states" \
+          -backend-config="prefix=tfstates/smae_engine/tf.state"
+    id: "smae-engine-tf-init"
+    waitFor:
+      - "smae-engine-docker-push"
+
+  # 4. Terraform apply — deploy function with the image built in this run
+  - name: "hashicorp/terraform:1.9"
+    entrypoint: sh
+    args:
+      - -c
+      - |
+        cd backend/smae_engine/deployment
+        terraform apply \
+          -auto-approve \
+          -var="project_id=$PROJECT_ID" \
+          -var="region=$_REGION" \
+          -var="image_tag=$SHORT_SHA"
+    id: "smae-engine-tf-apply"
+    waitFor:
+      - "smae-engine-tf-init"
+
+substitutions:
+  _REGION: us-central1
+
+options:
+  logging: CLOUD_LOGGING_ONLY

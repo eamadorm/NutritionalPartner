@@ -11,7 +11,7 @@ module "smae_engine_sa" {
   project_id   = var.project_id
   name         = var.sa_name
   display_name = "SMAE Engine SA"
-  description  = "Service account for the SMAE Engine Cloud Run service"
+  description  = var.sa_description
 
   iam_project_roles = {
     (var.project_id) = var.sa_roles
@@ -34,7 +34,7 @@ module "smae_engine_service" {
       image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_registry_name}/${var.image_name}:${var.image_tag}"
       resources = {
         limits = {
-          cpu    = "1"
+          cpu    = var.cpu
           memory = "${var.memory_mb}Mi"
         }
       }

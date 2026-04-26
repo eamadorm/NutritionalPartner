@@ -64,3 +64,15 @@ variable "sa_roles" {
   description = "IAM roles granted to the service account at project level"
   type        = list(string)
 }
+
+variable "sa_description" {
+  description = "Description for the service account"
+  type        = string
+  default     = "Service account for the SMAE Engine service"
+}
+
+variable "cpu" {
+  description = "CPU limit for the Cloud Run instance"
+  type        = string
+  default     = "1"
+}

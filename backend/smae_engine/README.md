@@ -30,9 +30,8 @@
  
  ## Quick Start
  
- ### Sandbox Setup
- 1. Create resources: `./source_code/create_resources.sh`
- 2. Verify extraction: Run `smae_extraction_verify.ipynb`
+ ### Verification
+ Verify extraction logic using the demonstration notebook: `notebooks/smae_engine/smae_extraction_verify.ipynb`.
  
  ### Usage
  ```python

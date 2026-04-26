@@ -18,3 +18,5 @@ sa_roles = [
   "roles/bigquery.jobUser",
   "roles/aiplatform.user",
 ]
+sa_description = "Service account for the SMAE Engine Cloud Run service"
+cpu            = "1"

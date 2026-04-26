@@ -58,6 +58,13 @@ backend/<name>/
 
 **Stage 1 shell scripts** (`create_resources.sh`, `delete_resources.sh`) belong at the root of `backend/<name>/` during Stage 1 only. Both files must be **deleted before Stage 2 begins** — they must not be present once Terraform owns the resources.
 
+### Dockerfile Best Practices
+All Dockerfiles must adhere to these standards:
+- **Security**: Never run as `root`. Define a non-privileged `USER`.
+- **Optimization**: Use multi-stage builds to keep production images lean.
+- **Layer Caching**: Copy dependency manifests (`pyproject.toml`, `uv.lock`) and install dependencies *before* copying the application source code.
+- **Base Images**: Use official `slim` or `bookworm-slim` images for Python to minimize vulnerability surface.
+
 ### Terraform File Structure
 Every Terraform deployment must be split across exactly four files — no exceptions:
 - **`backend.tf`**: `terraform {}` block with an **empty** `backend "gcs" {}` and `required_providers`. No values inside the backend block — neither `bucket` nor `prefix` are hardcoded. Both are always injected at runtime.

@@ -15,5 +15,6 @@ timeout_seconds        = 3600
 sa_roles = [
   "roles/storage.objectUser",
   "roles/bigquery.dataEditor",
+  "roles/bigquery.jobUser",
   "roles/aiplatform.user",
 ]

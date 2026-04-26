@@ -108,6 +108,13 @@ When writing or reviewing any CI/CD pipeline, verify the executing SA has all re
 
 **If any permission is missing**: add the role to the `ROLES` array in `infra/scripts/bootstrap.sh` — **never in Terraform**. `bootstrap.sh` is the single source of truth for CI/CD SA permissions; the SA (`cicd-pipeline-sa`) is defined and granted roles exclusively.
 
+#### Deployable Service Account (Runtime) Permissions
+Each deployable must have its own dedicated Service Account with "Least Privilege" roles. 
+- **BigQuery Integration**: If a service writes to BigQuery or runs queries, it MUST have `roles/bigquery.jobUser` at the project level to create jobs, in addition to `roles/bigquery.dataEditor` at the dataset level.
+- **GCS Integration**: Use `roles/storage.objectUser` for standard read/write access.
+- **Vertex AI Integration**: Use `roles/aiplatform.user` for model inference.
+- **Verification**: Always cross-reference the `sa_roles` list in `terraform.tfvars` with the actual API calls made in the `source_code/`.
+
 #### Shared Resources vs. Local Deployment
 Before adding any resource to a deployable's `deployment/` folder, perform a **Global Context Check**:
 - **Shared Resources**: If a resource (GCS bucket, BigQuery dataset, Artifact Registry) is intended to be used by **multiple deployables** or represents **foundational infrastructure**, it MUST be defined in `infra/shared_resources/`.

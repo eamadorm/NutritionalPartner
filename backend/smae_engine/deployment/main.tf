@@ -19,13 +19,22 @@ module "smae_engine_sa" {
 }
 
 # ---------------------------------------------------------------------------
-# Cloud Function v2 — HTTP-triggered, containerised SMAE extraction pipeline
+# Cloud Function v2 — HTTP-triggered, source-based SMAE extraction pipeline
 # ---------------------------------------------------------------------------
 module "smae_engine_function" {
   source     = "../../../infra/modules/cloud-function-v2"
   project_id = var.project_id
   region     = var.region
   name       = var.function_name
+
+  bucket_name = "${var.project_id}-gcf-source"
+  bucket_config = {
+    location = var.region
+  }
+
+  bundle_config = {
+    path = "../source_code"
+  }
 
   function_config = {
     entry_point     = "smae_handler"
@@ -35,11 +44,10 @@ module "smae_engine_function" {
     timeout_seconds = var.timeout_seconds
   }
 
-
-  trigger_config = null
+  docker_repository_id = "projects/${var.project_id}/locations/${var.region}/repositories/${var.artifact_registry_name}"
 
   iam = {
-    "roles/cloudfunctions.invoker" = []
+    "roles/cloudfunctions.invoker" = ["allUsers"]
   }
 
   service_account = module.smae_engine_sa.email

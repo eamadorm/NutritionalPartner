@@ -1,6 +1,5 @@
 ---
 trigger: always_on
-glob: "**/*.{yaml,yml,tf,tfvars,Makefile}"
 description: "DevOps standards for GCP: Cloud Build pipelines, Terraform (CFF), and state management."
 ---
 
@@ -110,6 +109,9 @@ Key rules:
 
 Minimal CD step pattern:
 ```yaml
+substitutions:
+  _REGION: us-central1
+
 steps:
   - name: 'hashicorp/terraform:1.x'
     entrypoint: 'sh'
@@ -122,8 +124,7 @@ steps:
         terraform apply -auto-approve \
           -var="image_tag=$SHORT_SHA" \
           -var="region=$_REGION"
-substitutions:
-  _REGION: us-central1
+
 ```
 
 ### Automation & Execution

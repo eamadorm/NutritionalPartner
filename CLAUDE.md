@@ -91,6 +91,24 @@ Every deployable feature follows a mandatory two-issue, two-stage flow. **Stage 
 
 Tests must **never** appear in the CD pipeline — CI is the correctness gate. The `terraform validate` step in CI (with `-backend=false`) is the CD pre-flight check. If the CI/CD service account (`cicd-pipeline-sa`) lacks permissions for any step, add the missing role to `infra/scripts/bootstrap.sh` — never to Terraform.
 
+Minimal CD step pattern:
+```yaml
+substitutions:
+  _REGION: us-central1
+steps:
+  - name: 'hashicorp/terraform:1.x'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        terraform init \
+          -backend-config="bucket=$$_PROJECT_ID-tf-states" \
+          -backend-config="prefix=tfstates/<deployment_name>/tf.state" && \
+        terraform apply -auto-approve \
+          -var="image_tag=$SHORT_SHA" \
+          -var="region=$_REGION"
+```
+
 ### GCP Infrastructure
 
 - Cloud Provider: GCP exclusively.

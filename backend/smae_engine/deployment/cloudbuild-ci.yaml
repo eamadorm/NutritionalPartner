@@ -1,3 +1,6 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
 steps:
   # 1. Run SMAE Engine unit tests
   - name: "ghcr.io/astral-sh/uv:python3.13-bookworm-slim"
@@ -32,6 +35,3 @@ steps:
     id: "smae-engine-tf-validate"
     waitFor:
       - "smae-engine-docker-build-local"
-
-options:
-  logging: CLOUD_LOGGING_ONLY

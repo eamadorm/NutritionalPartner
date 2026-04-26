@@ -1,3 +1,9 @@
+substitutions:
+  _REGION: us-central1
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
 steps:
   # 1. Build and push Docker image to Artifact Registry
   - name: "gcr.io/cloud-builders/docker"
@@ -35,7 +41,7 @@ steps:
     waitFor:
       - "smae-engine-docker-push"
 
-  # 3. Terraform apply — deploy function with the image built in this run
+  # 3. Terraform apply — deploy service with the image built in this run
   - name: "hashicorp/terraform:1.x"
     entrypoint: sh
     args:
@@ -50,9 +56,3 @@ steps:
     id: "smae-engine-tf-apply"
     waitFor:
       - "smae-engine-tf-init"
-
-substitutions:
-  _REGION: us-central1
-
-options:
-  logging: CLOUD_LOGGING_ONLY

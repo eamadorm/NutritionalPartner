@@ -103,6 +103,7 @@ When writing or reviewing any CI/CD pipeline, verify the executing SA has all re
 The CD pipeline (`cloudbuild-cd.yaml`) must deploy via `terraform init` + `terraform apply`. **Never use `gcloud functions deploy` or equivalent imperative deploy commands in the CD pipeline.**
 
 Key rules:
+- **Substitutions Placement**: All `substitutions` must be defined at the **top** of the Cloud Build YAML file for easier discovery and replacement.
 - Pass the image tag as a Terraform variable: `-var="image_tag=$SHORT_SHA"`.
 - Use the `_REGION` substitution variable (a user-defined substitution) — not `$REGION`, which is not a Cloud Build built-in.
 - Do **not** set `substitution_option: ALLOW_LOOSE`. All referenced substitution variables must be explicitly declared.

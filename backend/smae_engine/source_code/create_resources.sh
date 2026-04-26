@@ -15,7 +15,7 @@ LOCATION="us-central1"
 echo "Creating GCS bucket: gs://${BUCKET_NAME} in project ${PROJECT_ID}..."
 gcloud storage buckets create "gs://${BUCKET_NAME}" \
   --project="${PROJECT_ID}" \
-  --location="${LOCATION}"
+  --location="${LOCATION}" || echo "Bucket already exists, skipping."
 
 # --- BigQuery dataset ---
 echo "Creating BQ dataset: ${BQ_DATASET}..."

@@ -16,18 +16,18 @@ steps:
       - -f
       - backend/smae_engine/deployment/Dockerfile
       - backend/
-    id: "smae-engine-docker-build-push"
+    id: "docker-image-build"
 
   - name: "gcr.io/cloud-builders/docker"
     args:
       - push
       - --all-tags
       - $_REGION-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine
-    id: "smae-engine-docker-push"
+    id: "docker-image-push"
     waitFor:
-      - "smae-engine-docker-build-push"
+      - "docker-image-build"
 
-  # 2. Terraform init — inject backend bucket established in bootstrap.sh
+  # 2. Terraform Lifecycle: Initialization and Application
   - name: "hashicorp/terraform:1.9"
     entrypoint: sh
     args:
@@ -37,11 +37,10 @@ steps:
         terraform init \
           -backend-config="bucket=$PROJECT_ID-tf-states" \
           -backend-config="prefix=tfstates/smae_engine/tf.state"
-    id: "smae-engine-tf-init"
+    id: "terraform-init"
     waitFor:
-      - "smae-engine-docker-push"
+      - "docker-image-push"
 
-  # 3. Terraform apply — deploy service with the image built in this run
   - name: "hashicorp/terraform:1.9"
     entrypoint: sh
     args:
@@ -53,6 +52,6 @@ steps:
           -var="project_id=$PROJECT_ID" \
           -var="region=$_REGION" \
           -var="image_tag=$SHORT_SHA"
-    id: "smae-engine-tf-apply"
+    id: "terraform-apply"
     waitFor:
-      - "smae-engine-tf-init"
+      - "terraform-init"

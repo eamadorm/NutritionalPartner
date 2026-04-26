@@ -20,6 +20,7 @@ ROLES=(
   "roles/cloudbuild.builds.builder"
   "roles/run.admin"
   "roles/iam.serviceAccountUser"
+  "roles/iam.serviceAccountAdmin"
   "roles/iam.securityAdmin"
   "roles/resourcemanager.projectIamAdmin"
 )

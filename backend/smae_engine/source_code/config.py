@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -56,4 +56,39 @@ class SmaeSettings(BaseSettings):
     gemini_retry_max_delay_s: Annotated[
         float,
         Field(default=60.0, ge=1.0, description="Max retry delay cap in seconds"),
+    ]
+
+    # --- BigQuery ---
+    bq_project: Annotated[
+        Optional[str],
+        Field(
+            default=None,
+            description="GCP project for BigQuery writes; resolved from ADC when unset",
+        ),
+    ]
+    bq_dataset: Annotated[
+        str,
+        Field(
+            default="nutrimental_information",
+            description="BigQuery dataset containing the food equivalents table",
+        ),
+    ]
+    bq_table: Annotated[
+        str,
+        Field(default="food_equivalents", description="BigQuery table for food items"),
+    ]
+    bq_dead_letter_table: Annotated[
+        str,
+        Field(
+            default="food_equivalents_dead_letter",
+            description="BigQuery dead-letter table for failed row inserts",
+        ),
+    ]
+    bq_batch_size: Annotated[
+        int,
+        Field(
+            default=500,
+            ge=1,
+            description="Max rows per load_table_from_json batch job",
+        ),
     ]

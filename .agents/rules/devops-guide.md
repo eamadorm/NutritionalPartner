@@ -62,8 +62,6 @@ backend/<name>/
 All Dockerfiles must adhere to these standards:
 - **Security**: Never run as `root`. Define a non-privileged `USER`.
 - **Optimization**: Use multi-stage builds to keep production images lean.
-- **Layer Caching**: Copy dependency manifests (`pyproject.toml`, `uv.lock`) and install dependencies *before* copying the application source code.
-- **Base Images**: Use official `slim` or `bookworm-slim` images for Python to minimize vulnerability surface.
 
 ### Terraform File Structure
 Every Terraform deployment must be split across exactly four files — no exceptions:

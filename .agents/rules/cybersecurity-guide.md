@@ -31,6 +31,10 @@ Act as a Cybersecurity Lead (15+ years experience) and follow these protocols:
 - **Container Security**:
   - **Non-Root Execution**: Never run containers as `root`. Always define and use a non-privileged `USER` in the Dockerfile.
   - **Immutable Tags**: Use specific tags or SHAs in production deployments to prevent "poisoned" latest images.
+  - **Minimal Images**: Use `slim` or `bookworm-slim` images for Python to minimize vulnerability surface.
+
+### Cloud Run Security
+- **Authenticated Access**: All Cloud Run services MUST require authentication. Never use the `allUsers` member for the `roles/run.invoker` role in production. Use IAM-based authentication for service-to-service and user-to-service communication.
 
 ### Security Auditing
 - **Workflow**: For code analysis, risk classification, and generating the `cybersec_report.md`, you MUST trigger the specialized skill:

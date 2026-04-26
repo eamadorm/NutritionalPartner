@@ -83,7 +83,18 @@ gcloud iam service-accounts add-iam-policy-binding "${SA_EMAIL}" \
   --role="roles/iam.serviceAccountTokenCreator" \
   --condition=None >/dev/null
 
-# 6. Initialize CI/CD Triggers
+# 6. Deploy Shared Resources
+echo "Deploying Shared Resources (BigQuery, Artifact Registry, GCS)..."
+cd infra/shared_resources
+terraform init \
+  -backend-config="bucket=${BUCKET_NAME}" \
+  -backend-config="prefix=tfstates/shared_resources/tf.state"
+terraform apply -auto-approve \
+  -var="project_id=${PROJECT_ID}" \
+  -var="region=${REGION}"
+cd ../..
+
+# 7. Initialize CI/CD Triggers
 echo "Initializing CI/CD Triggers..."
 ./infra/scripts/create_cicd_triggers.sh \
   "${PROJECT_ID}" \

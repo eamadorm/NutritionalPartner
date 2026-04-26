@@ -20,5 +20,18 @@ steps:
       - backend/
     id: "smae-engine-docker-build-local"
 
+  # 3. Validate Terraform configuration — confirms CD will execute correctly
+  - name: "hashicorp/terraform:1.9"
+    entrypoint: sh
+    args:
+      - -c
+      - |
+        cd backend/smae_engine/deployment
+        terraform init -backend=false
+        terraform validate
+    id: "smae-engine-tf-validate"
+    waitFor:
+      - "smae-engine-docker-build-local"
+
 options:
   logging: CLOUD_LOGGING_ONLY

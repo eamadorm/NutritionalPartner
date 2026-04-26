@@ -1,15 +1,5 @@
 steps:
-  # 1. Run SMAE Engine unit tests before building or deploying
-  - name: "ghcr.io/astral-sh/uv:python3.13-bookworm-slim"
-    entrypoint: /bin/bash
-    args:
-      - -c
-      - |
-        cd backend
-        uv run pytest ../tests/backend/smae_engine/
-    id: "smae-engine-tests"
-
-  # 2. Build and push Docker image to Artifact Registry
+  # 1. Build and push Docker image to Artifact Registry
   - name: "gcr.io/cloud-builders/docker"
     args:
       - build
@@ -31,7 +21,7 @@ steps:
     waitFor:
       - "smae-engine-docker-build-push"
 
-  # 3. Terraform init — inject backend bucket established in bootstrap.sh
+  # 2. Terraform init — inject backend bucket established in bootstrap.sh
   - name: "hashicorp/terraform:1.9"
     entrypoint: sh
     args:
@@ -45,7 +35,7 @@ steps:
     waitFor:
       - "smae-engine-docker-push"
 
-  # 4. Terraform apply — deploy function with the image built in this run
+  # 3. Terraform apply — deploy function with the image built in this run
   - name: "hashicorp/terraform:1.9"
     entrypoint: sh
     args:

@@ -62,6 +62,8 @@ backend/<name>/
 All Dockerfiles must adhere to these standards:
 - **Security**: Never run as `root`. Define a non-privileged `USER`.
 - **Optimization**: Use multi-stage builds to keep production images lean.
+- **Layer Caching**: Copy dependency manifests (`pyproject.toml`, `uv.lock`) and install dependencies *before* copying the application source code.
+- **Base Images**: Use official `slim` or `bookworm-slim` images for Python to minimize vulnerability surface.
 
 ### Terraform File Structure
 Every Terraform deployment must be split across exactly four files — no exceptions:
@@ -104,7 +106,7 @@ When writing or reviewing any CI/CD pipeline, verify the executing SA has all re
 
 **Mandatory Check**: Whenever creating a new deployable with its own Service Account and IAM roles, you MUST verify that the CI/CD SA (`cicd-pipeline-sa`) has the necessary permissions (e.g., `iam.serviceAccounts.create`, `iam.serviceAccounts.actAs`) to fully provision and configure the new service.
 
-**If any permission is missing**: add the role to the `ROLES` array in `infra/scripts/bootstrap.sh` — **never in Terraform**. `bootstrap.sh` is the single source of truth for CI/CD SA permissions; the SA (`cicd-pipeline-sa`) is defined and granted roles there exclusively.
+**If any permission is missing**: add the role to the `ROLES` array in `infra/scripts/bootstrap.sh` — **never in Terraform**. `bootstrap.sh` is the single source of truth for CI/CD SA permissions; the SA (`cicd-pipeline-sa`) is defined and granted roles exclusively.
 
 #### Shared Resources vs. Local Deployment
 Before adding any resource to a deployable's `deployment/` folder, perform a **Global Context Check**:

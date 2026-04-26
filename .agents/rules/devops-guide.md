@@ -57,6 +57,27 @@ terraform init \
 ### CI/CD Pipelines (Cloud Build)
 - **Tooling**: Use **Cloud Build**. Triggers must be created/managed via the centralized `infra/scripts/cicd_triggers.sh` script, **never** via Terraform.
 
+#### CI/CD Responsibility Separation
+
+| Pipeline | Steps | Must NOT contain |
+|----------|-------|-----------------|
+| `cloudbuild-ci.yaml` (PR gate) | Run tests · Docker build (local, no push) · `terraform validate` | Docker push, `terraform apply` |
+| `cloudbuild-cd.yaml` (push-to-main) | Docker build + push · `terraform init` + `terraform apply` | Tests — already validated by CI |
+
+Tests **must never appear in the CD pipeline**. CI is the correctness gate; CD executes a pre-validated artifact. The `terraform validate` step in CI (run with `-backend=false`) is the CD pre-flight check — it confirms the Terraform config is syntactically valid and all referenced variables exist before any merge reaches CD.
+
+#### Service Account Permissions Validation
+
+When writing or reviewing any CI/CD pipeline, verify the executing SA has all required IAM permissions for every step. Required permissions for `cicd-pipeline-sa` typically include:
+
+- GCS read/write for Terraform state bucket
+- Artifact Registry push (Docker image publication)
+- Cloud Functions deploy / update
+- IAM role bindings (to create/update per-function SAs)
+- Service account impersonation
+
+**If any permission is missing**: add the role to the `ROLES` array in `infra/scripts/bootstrap.sh` — **never in Terraform**. `bootstrap.sh` is the single source of truth for CI/CD SA permissions; the SA (`cicd-pipeline-sa`) is defined and granted roles there exclusively.
+
 #### CD Pipeline — Terraform deploy pattern
 The CD pipeline (`cloudbuild-cd.yaml`) must deploy via `terraform init` + `terraform apply`. **Never use `gcloud functions deploy` or equivalent imperative deploy commands in the CD pipeline.**
 

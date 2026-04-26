@@ -82,6 +82,15 @@ Every deployable feature follows a mandatory two-issue, two-stage flow. **Stage 
 - **Stage 1 – Part A (Prototyping)**: Logic lives in `backend/<name>/source_code/`. GCP resources are provisioned via `create_resources.sh` using `gcloud` commands only. Verified via a Jupyter notebook in `notebooks/<name>/`. Manual resources are deleted via `delete_resources.sh` before Stage 1 DoD.
 - **Stage 2 – Part B (Deployment)**: Logic is codified in Terraform (Cloud Foundation Fabric modules) at `backend/<name>/deployment/`. CI/CD triggers are managed exclusively via `infra/scripts/create_cicd_triggers.sh` — **never via Terraform**.
 
+### CI/CD Responsibility Separation
+
+| Pipeline | Responsibilities |
+|----------|-----------------|
+| CI (`cloudbuild-ci.yaml`) | Tests · Docker build (local, no push) · `terraform validate` |
+| CD (`cloudbuild-cd.yaml`) | Docker build + push · `terraform init` + `terraform apply` |
+
+Tests must **never** appear in the CD pipeline — CI is the correctness gate. The `terraform validate` step in CI (with `-backend=false`) is the CD pre-flight check. If the CI/CD service account (`cicd-pipeline-sa`) lacks permissions for any step, add the missing role to `infra/scripts/bootstrap.sh` — never to Terraform.
+
 ### GCP Infrastructure
 
 - Cloud Provider: GCP exclusively.

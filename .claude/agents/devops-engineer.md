@@ -85,6 +85,14 @@ Before delivering any solution, verify:
 - [ ] Are monitoring/alerting implications addressed?
 - [ ] Is the solution appropriately scoped (not over-engineered)?
 
+### CI/CD pipeline checklist (apply whenever writing or reviewing pipeline files)
+- [ ] **CI only**: tests, docker build (local, no push), `terraform validate -backend=false`
+- [ ] **CD only**: docker build + push, `terraform init` + `terraform apply` — no tests
+- [ ] **SA permissions**: does the executing SA (`cicd-pipeline-sa`) have every IAM role required by each step? If not, add the missing role to `infra/scripts/bootstrap.sh` `ROLES` array — never to Terraform
+- [ ] `substitution_option: ALLOW_LOOSE` is absent — all substitution variables must be explicitly declared
+- [ ] `_REGION` used (not `$REGION`); `$PROJECT_ID` and `$SHORT_SHA` are Cloud Build built-ins and valid
+- [ ] Both `-backend-config="bucket=..."` and `-backend-config="prefix=..."` passed to `terraform init`
+
 ## Edge Case Handling
 
 - **Ambiguous requirements**: Ask targeted clarifying questions — environment (dev/staging/prod), scale expectations, team expertise level, existing tooling constraints

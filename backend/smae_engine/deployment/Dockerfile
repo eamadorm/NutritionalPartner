@@ -19,6 +19,9 @@ RUN uv sync --group smae --no-dev --no-install-project
 # ==============================================================================
 FROM python:3.13-slim AS runtime
 
+# Create a non-root user for security
+RUN groupadd -r nutri-group && useradd -r -g nutri-group nutri-user
+
 WORKDIR /app
 
 # Copy the pre-built virtual environment from the builder stage
@@ -27,14 +30,16 @@ COPY --from=builder /app/.venv /app/.venv
 # Copy entire backend directory so all modules are importable under /app/backend/
 COPY . /app/backend/
 
-# Make /app a Python package root so `import smae_engine` resolves correctly
-RUN touch /app/__init__.py
+# Ensure the non-root user has ownership of the application files
+RUN chown -R nutri-user:nutri-group /app && touch /app/__init__.py && chown nutri-user:nutri-group /app/__init__.py
 
 # Activate the virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Allow absolute imports from /app (e.g., smae_engine.source_code.main)
 ENV PYTHONPATH="/app"
+
+USER nutri-user
 
 EXPOSE 8080
 

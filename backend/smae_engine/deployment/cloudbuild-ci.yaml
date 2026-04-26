@@ -9,7 +9,7 @@ steps:
       - -c
       - |
         cd backend
-        uv run pytest ../tests/backend/smae_engine/
+        uv run --group smae --group dev pytest ../tests/backend/smae_engine/
     id: "smae-engine-tests"
 
   # 2. Validate Docker image builds successfully (local, no push)

@@ -19,10 +19,16 @@ app = FastAPI(
 
 
 @app.post("/", response_model=ExtractionResponse)
-async def smae_handler(request: ExtractionRequest):
+async def smae_handler(request: ExtractionRequest) -> ExtractionResponse:
     """
     HTTP POST entry point for the SMAE ingestion pipeline.
-    FastAPI automatically validates the request body against the ExtractionRequest model.
+    Parses the JSON body into an ExtractionRequest and runs the orchestrator.
+
+    Args:
+       request: ExtractionRequest -> Validated request with GCS URI and optional page params.
+
+    Returns:
+        ExtractionResponse -> Validated response containing items and metadata.
     """
     logger.info("SMAE handler invoked via HTTP")
     try:
@@ -35,10 +41,16 @@ async def smae_handler(request: ExtractionRequest):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-def run_cli():
+def run_cli() -> None:
     """
     CLI entry point for local execution or batch jobs.
-    Usage: python -m backend.smae_engine.source_code.main gs://bucket/file.pdf
+    Takes a GCS URI as a positional argument and prints the JSON result.
+
+    Args:
+       None -> Uses sys.argv for positional GCS URI.
+
+    Returns:
+        None -> Prints result to stdout or exits with code 1.
     """
     if len(sys.argv) < 2:
         print("Usage: python -m backend.smae_engine.source_code.main <gcs_uri>")

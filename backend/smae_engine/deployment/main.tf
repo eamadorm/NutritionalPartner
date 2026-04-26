@@ -43,6 +43,7 @@ module "smae_engine_service" {
 
   revision = {
     max_instance_count = var.instance_count
+    min_instance_count = var.min_instance_count
     timeout            = "${var.timeout_seconds}s"
   }
 

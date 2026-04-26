@@ -9,7 +9,8 @@ artifact_registry_name = "nutritional-partner-images"
 image_name             = "smae-engine"
 runtime                = "python313"
 instance_count         = 1
-memory_mb              = 512
+min_instance_count     = 0
+memory_mb              = 1024
 timeout_seconds        = 300
 sa_roles = [
   "roles/storage.objectUser",

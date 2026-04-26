@@ -20,7 +20,7 @@ from backend.smae_engine.source_code.schemas import (
     TransformResponse,
     VerificationResponse,
 )
-from backend.smae_engine.source_code.main import IngestionPipeline
+from backend.smae_engine.source_code.pipeline import IngestionPipeline
 
 
 def make_pdf(num_pages: int) -> bytes:

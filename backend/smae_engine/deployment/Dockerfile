@@ -43,4 +43,6 @@ USER nutri-user
 
 EXPOSE 8080
 
-CMD ["python", "-m", "functions_framework", "--target=smae_handler", "--source=/app/backend/smae_engine/source_code/main.py", "--port=8080"]
+# Run the web service on container startup.
+# Use gunicorn as the production WSGI server.
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "0", "backend.smae_engine.source_code.main:app"]

@@ -1,7 +1,7 @@
 [project]
 name = "nutritional-partner-backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "Backend for the Nutritional Partner project"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -19,7 +19,8 @@ smae = [
     "pydantic>=2.13.3",
     "pydantic-settings>=2.0.0",
     "google-cloud-bigquery>=3.41.0",
-    "functions-framework>=3.0.0",
+    "flask>=3.0.0",
+    "gunicorn>=23.0.0",
 ]
 dev = ["pytest>=9.0.3", "pytest-mock>=3.0.0"]
 

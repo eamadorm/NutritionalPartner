@@ -11,7 +11,7 @@ runtime                = "python313"
 instance_count         = 1
 min_instance_count     = 0
 memory_mb              = 1024
-timeout_seconds        = 300
+timeout_seconds        = 3600
 sa_roles = [
   "roles/storage.objectUser",
   "roles/bigquery.dataEditor",

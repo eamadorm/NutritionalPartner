@@ -1,7 +1,9 @@
+import asyncio
 import os
 import sys
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from functools import partial
 from loguru import logger
 
 from backend.smae_engine.source_code.pipeline import IngestionPipeline
@@ -33,8 +35,8 @@ async def smae_handler(request: ExtractionRequest) -> ExtractionResponse:
     logger.info("SMAE handler invoked via HTTP")
     try:
         pipeline = IngestionPipeline()
-        # FastAPI handles model validation and serialization automatically
-        result = pipeline.run(request)
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, partial(pipeline.run, request))
         return result
     except Exception:
         logger.exception("Unhandled error in smae_handler")

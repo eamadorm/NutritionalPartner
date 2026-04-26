@@ -18,6 +18,25 @@ Follow these protocols for Infrastructure as Code (IaC) and CI/CD orchestration:
   - Store state in a GCS bucket named: `<gcp-project-id>-tf-states`.
   - **Structure**: `/tfstates/<deployment_name>/tf.state`.
 
+### Regional Deployment Strategy
+- **Project Main Region**: `us-central1` is the mandatory default region for all resources.
+- **Overridability**: Every deployable must support regional overrides for specific services (e.g. `bq_location`, `ar_region`).
+- **Fallback Logic**: If a service-specific region is not provided, it must always default to the `region` variable (which itself defaults to `us-central1`).
+- **Implementation Pattern**:
+  ```hcl
+  variable "region" {
+    type    = string
+    default = "us-central1"
+  }
+  variable "specific_service_region" {
+    type    = string
+    default = null
+  }
+  locals {
+    effective_region = coalesce(var.specific_service_region, var.region)
+  }
+  ```
+
 ### Deployable Folder Structure
 Every deployable under `backend/<name>/` must follow this exact layout:
 

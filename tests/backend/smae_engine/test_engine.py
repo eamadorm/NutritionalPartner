@@ -426,11 +426,11 @@ def test_build_client_initializes_genai_client_with_correct_args(mocker):
 
     pipeline._gemini._build_client()
 
-    mock_genai_client_cls.assert_called_once_with(
-        vertexai=True,
-        project="test-project",
-        location="us-east1",
-    )
+    call_kwargs = mock_genai_client_cls.call_args.kwargs
+    assert call_kwargs["vertexai"] is True
+    assert call_kwargs["project"] == "test-project"
+    assert call_kwargs["location"] == "us-east1"
+    assert call_kwargs["http_options"].timeout == int(3500.0 * 1000)
 
 
 def test_build_client_caches_client_across_calls(mocker):

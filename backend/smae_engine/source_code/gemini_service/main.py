@@ -14,7 +14,7 @@ from typing import Optional
 
 import google.auth
 from google import genai
-from google.api_core import exceptions as gapi_exceptions
+from google.genai import errors as genai_errors
 from google.genai import types
 from loguru import logger
 from pypdf import PdfReader, PdfWriter
@@ -165,7 +165,7 @@ class GeminiService:
     def _call_gemini(self, client: genai.Client, file_part: types.Part) -> list[dict]:
         """
         Sends a document part to Gemini Flash and returns parsed JSON items.
-        Retries on ResourceExhausted with exponential backoff and jitter.
+        Retries on status codes 429, 500, 503, 504 with exponential backoff and jitter.
 
         Args:
             client: genai.Client -> Authenticated Vertex AI GenAI client.
@@ -193,12 +193,10 @@ class GeminiService:
                     ),
                 )
                 return json.loads(result.text)
-            except (
-                gapi_exceptions.ResourceExhausted,
-                gapi_exceptions.DeadlineExceeded,
-                gapi_exceptions.InternalServerError,
-                gapi_exceptions.ServiceUnavailable,
-            ) as exc:
+            except genai_errors.APIError as exc:
+                # 429=ResourceExhausted, 500=Internal, 503=Unavailable, 504=DeadlineExceeded
+                if exc.code not in (429, 500, 503, 504):
+                    raise
                 if attempt == self._settings.max_retries:
                     raise
                 delay = min(
@@ -207,8 +205,9 @@ class GeminiService:
                     self._settings.retry_max_delay_s,
                 )
                 logger.warning(
-                    f"Gemini {exc.__class__.__name__} (attempt {attempt + 1}/"
-                    f"{self._settings.max_retries + 1}); retrying in {delay:.1f}s"
+                    f"Gemini {exc.code} {exc.__class__.__name__} "
+                    f"(attempt {attempt + 1}/{self._settings.max_retries + 1}); "
+                    f"retrying in {delay:.1f}s"
                 )
                 time.sleep(delay)
         raise RuntimeError("Unreachable")

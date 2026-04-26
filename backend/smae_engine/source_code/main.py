@@ -35,9 +35,15 @@ async def smae_handler(request: ExtractionRequest) -> ExtractionResponse:
     logger.info("SMAE handler invoked via HTTP")
     try:
         pipeline = IngestionPipeline()
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, partial(pipeline.run, request))
+        loop = asyncio.get_running_loop()
+        result = await asyncio.wait_for(
+            loop.run_in_executor(None, partial(pipeline.run, request)),
+            timeout=3540.0,
+        )
         return result
+    except asyncio.TimeoutError:
+        logger.error("Pipeline exceeded request timeout")
+        raise HTTPException(status_code=504, detail="Pipeline timeout")
     except Exception:
         logger.exception("Unhandled error in smae_handler")
         raise HTTPException(status_code=500, detail="Internal server error")

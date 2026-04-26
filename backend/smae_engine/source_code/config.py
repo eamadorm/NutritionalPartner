@@ -53,13 +53,14 @@ class GeminiSettings(BaseSettings):
     ]
     max_parallel_workers: Annotated[
         int,
-        Field(default=10, ge=1, description="Max concurrent Gemini batch calls"),
+        Field(default=10, ge=1, le=20, description="Max concurrent Gemini batch calls"),
     ]
     max_retries: Annotated[
         int,
         Field(
             default=3,
             ge=0,
+            le=10,
             description=(
                 "Max retries on retryable Gemini errors "
                 "(ResourceExhausted, DeadlineExceeded, InternalServerError, ServiceUnavailable)"

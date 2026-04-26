@@ -21,7 +21,7 @@ steps:
     id: "smae-engine-docker-build-local"
 
   # 3. Validate Terraform configuration — confirms CD will execute correctly
-  - name: "hashicorp/terraform:1.9"
+  - name: "hashicorp/terraform:1.x"
     entrypoint: sh
     args:
       - -c

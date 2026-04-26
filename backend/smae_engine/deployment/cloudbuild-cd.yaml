@@ -4,9 +4,9 @@ steps:
     args:
       - build
       - -t
-      - us-central1-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine:$SHORT_SHA
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine:$SHORT_SHA
       - -t
-      - us-central1-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine:latest
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine:latest
       - -f
       - backend/smae_engine/deployment/Dockerfile
       - backend/
@@ -16,13 +16,13 @@ steps:
     args:
       - push
       - --all-tags
-      - us-central1-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/nutritional-partner-images/smae-engine
     id: "smae-engine-docker-push"
     waitFor:
       - "smae-engine-docker-build-push"
 
   # 2. Terraform init — inject backend bucket established in bootstrap.sh
-  - name: "hashicorp/terraform:1.9"
+  - name: "hashicorp/terraform:1.x"
     entrypoint: sh
     args:
       - -c
@@ -36,7 +36,7 @@ steps:
       - "smae-engine-docker-push"
 
   # 3. Terraform apply — deploy function with the image built in this run
-  - name: "hashicorp/terraform:1.9"
+  - name: "hashicorp/terraform:1.x"
     entrypoint: sh
     args:
       - -c

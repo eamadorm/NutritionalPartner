@@ -35,9 +35,6 @@ module "smae_engine_function" {
     timeout_seconds = var.timeout_seconds
   }
 
-  container = {
-    image = "us-central1-docker.pkg.dev/${var.project_id}/${var.artifact_registry_name}/${var.image_name}:${var.image_tag}"
-  }
 
   trigger_config = null
 

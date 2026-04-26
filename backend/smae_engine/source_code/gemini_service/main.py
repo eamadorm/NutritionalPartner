@@ -4,7 +4,11 @@ import random
 import threading
 import time
 import uuid
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import (
+    ThreadPoolExecutor,
+    TimeoutError as FutureTimeoutError,
+    as_completed,
+)
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -140,15 +144,21 @@ class GeminiService:
         return VerificationResponse(status="valid", items_count=len(items))
 
     def _build_client(self) -> genai.Client:
-        """Initializes (and caches) the Vertex AI GenAI client using ADC."""
+        """Initializes (and caches) the Vertex AI GenAI client using ADC.
+
+        HttpOptions.timeout is in milliseconds; gemini_call_timeout_s is converted
+        on construction so all HTTP requests inherit the Cloud-Run-safe deadline.
+        """
         if self._client is None:
             with self._lock:
                 if self._client is None:
                     _, project_id = google.auth.default()
+                    timeout_ms = int(self._settings.gemini_call_timeout_s * 1000)
                     self._client = genai.Client(
                         vertexai=True,
                         project=project_id,
                         location=self._settings.gcp_location,
+                        http_options=types.HttpOptions(timeout=timeout_ms),
                     )
         return self._client
 
@@ -183,7 +193,12 @@ class GeminiService:
                     ),
                 )
                 return json.loads(result.text)
-            except gapi_exceptions.ResourceExhausted:
+            except (
+                gapi_exceptions.ResourceExhausted,
+                gapi_exceptions.DeadlineExceeded,
+                gapi_exceptions.InternalServerError,
+                gapi_exceptions.ServiceUnavailable,
+            ) as exc:
                 if attempt == self._settings.max_retries:
                     raise
                 delay = min(
@@ -192,7 +207,7 @@ class GeminiService:
                     self._settings.retry_max_delay_s,
                 )
                 logger.warning(
-                    f"Gemini ResourceExhausted (attempt {attempt + 1}/"
+                    f"Gemini {exc.__class__.__name__} (attempt {attempt + 1}/"
                     f"{self._settings.max_retries + 1}); retrying in {delay:.1f}s"
                 )
                 time.sleep(delay)
@@ -246,5 +261,14 @@ class GeminiService:
             }
             for future in as_completed(future_to_idx):
                 idx = future_to_idx[future]
-                results[idx] = future.result()
+                try:
+                    results[idx] = future.result(
+                        timeout=self._settings.batch_result_timeout_s
+                    )
+                except FutureTimeoutError:
+                    logger.error(
+                        f"Batch {idx} timed out after "
+                        f"{self._settings.batch_result_timeout_s}s"
+                    )
+                    raise
         return [item for idx in sorted(results) for item in results[idx]]

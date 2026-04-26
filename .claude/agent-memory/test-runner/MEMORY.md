@@ -1,0 +1,2 @@
+- [SMAE Engine Testing Conventions](project_smae_testing.md) — GeminiSettings field minimums, mock patterns for retry/timeout tests
+- [SMAE APIError status_code bug fix](project_smae_bug_status_code.md) — exc.status_code -> exc.code fix; use exc.code when asserting APIError HTTP status

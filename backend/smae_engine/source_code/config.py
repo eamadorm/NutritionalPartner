@@ -4,22 +4,14 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class SmaeSettings(BaseSettings):
+class GcsSettings(BaseSettings):
     """
-    Configuration settings for the SMAE ingestion pipeline.
-    Loads from environment variables prefixed with ``SMAE_``.
+    Configuration settings for the GCS service.
+    Loads from environment variables prefixed with ``SMAE_GCS_``.
     """
 
-    model_config = SettingsConfigDict(env_prefix="SMAE_")
+    model_config = SettingsConfigDict(env_prefix="SMAE_GCS_")
 
-    gemini_model: Annotated[
-        str,
-        Field(default="gemini-2.5-flash", description="Gemini model identifier"),
-    ]
-    gcp_location: Annotated[
-        str,
-        Field(default="us-central1", description="GCP region for Vertex AI"),
-    ]
     trusted_bucket: Annotated[
         str,
         Field(
@@ -31,6 +23,30 @@ class SmaeSettings(BaseSettings):
         int,
         Field(default=20, ge=1, description="Maximum allowed PDF size in MB"),
     ]
+    max_source_pdf_size_mb: Annotated[
+        int,
+        Field(
+            default=50, ge=1, description="Max source PDF size in MB before download"
+        ),
+    ]
+
+
+class GeminiSettings(BaseSettings):
+    """
+    Configuration settings for the Gemini service.
+    Loads from environment variables prefixed with ``SMAE_GEMINI_``.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="SMAE_GEMINI_")
+
+    model: Annotated[
+        str,
+        Field(default="gemini-2.5-flash", description="Gemini model identifier"),
+    ]
+    gcp_location: Annotated[
+        str,
+        Field(default="us-central1", description="GCP region for Vertex AI"),
+    ]
     batch_size: Annotated[
         int,
         Field(default=5, ge=1, description="Pages per parallel extraction batch"),
@@ -39,52 +55,54 @@ class SmaeSettings(BaseSettings):
         int,
         Field(default=10, ge=1, description="Max concurrent Gemini batch calls"),
     ]
-    max_source_pdf_size_mb: Annotated[
-        int,
-        Field(
-            default=50, ge=1, description="Max source PDF size in MB before download"
-        ),
-    ]
-    gemini_max_retries: Annotated[
+    max_retries: Annotated[
         int,
         Field(default=3, ge=0, description="Max retries on Gemini ResourceExhausted"),
     ]
-    gemini_retry_base_delay_s: Annotated[
+    retry_base_delay_s: Annotated[
         float,
         Field(default=5.0, ge=0.1, description="Base retry delay in seconds"),
     ]
-    gemini_retry_max_delay_s: Annotated[
+    retry_max_delay_s: Annotated[
         float,
         Field(default=60.0, ge=1.0, description="Max retry delay cap in seconds"),
     ]
 
-    # --- BigQuery ---
-    bq_project: Annotated[
+
+class BqSettings(BaseSettings):
+    """
+    Configuration settings for the BigQuery service.
+    Loads from environment variables prefixed with ``SMAE_BQ_``.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="SMAE_BQ_")
+
+    project: Annotated[
         Optional[str],
         Field(
             default=None,
             description="GCP project for BigQuery writes; resolved from ADC when unset",
         ),
     ]
-    bq_dataset: Annotated[
+    dataset: Annotated[
         str,
         Field(
             default="nutrimental_information",
             description="BigQuery dataset containing the food equivalents table",
         ),
     ]
-    bq_table: Annotated[
+    table: Annotated[
         str,
         Field(default="food_equivalents", description="BigQuery table for food items"),
     ]
-    bq_dead_letter_table: Annotated[
+    dead_letter_table: Annotated[
         str,
         Field(
             default="food_equivalents_dead_letter",
             description="BigQuery dead-letter table for failed row inserts",
         ),
     ]
-    bq_batch_size: Annotated[
+    batch_size: Annotated[
         int,
         Field(
             default=500,

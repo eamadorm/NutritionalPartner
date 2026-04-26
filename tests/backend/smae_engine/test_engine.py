@@ -5,7 +5,11 @@ from datetime import datetime, timezone
 from pydantic import ValidationError
 from pypdf import PdfReader, PdfWriter
 
-from backend.smae_engine.source_code.config import SmaeSettings
+from backend.smae_engine.source_code.config import (
+    BqSettings,
+    GcsSettings,
+    GeminiSettings,
+)
 from backend.smae_engine.source_code.schemas import (
     ExtractionMetadata,
     ExtractionRequest,
@@ -58,20 +62,20 @@ def sample_response(sample_item: FoodItem) -> ExtractionResponse:
 
 
 def test_generate_food_uuid_is_deterministic(pipeline: IngestionPipeline):
-    uuid1 = pipeline._generate_food_uuid("gs://test.pdf", "Apple")
-    uuid2 = pipeline._generate_food_uuid("gs://test.pdf", "Apple")
+    uuid1 = pipeline._gemini._generate_food_uuid("gs://test.pdf", "Apple")
+    uuid2 = pipeline._gemini._generate_food_uuid("gs://test.pdf", "Apple")
     assert uuid1 == uuid2
 
 
 def test_generate_food_uuid_differs_by_food(pipeline: IngestionPipeline):
-    uuid1 = pipeline._generate_food_uuid("gs://test.pdf", "Apple")
-    uuid2 = pipeline._generate_food_uuid("gs://test.pdf", "Banana")
+    uuid1 = pipeline._gemini._generate_food_uuid("gs://test.pdf", "Apple")
+    uuid2 = pipeline._gemini._generate_food_uuid("gs://test.pdf", "Banana")
     assert uuid1 != uuid2
 
 
 def test_generate_food_uuid_differs_by_uri(pipeline: IngestionPipeline):
-    uuid1 = pipeline._generate_food_uuid("gs://bucket-a/file.pdf", "Apple")
-    uuid2 = pipeline._generate_food_uuid("gs://bucket-b/file.pdf", "Apple")
+    uuid1 = pipeline._gemini._generate_food_uuid("gs://bucket-a/file.pdf", "Apple")
+    uuid2 = pipeline._gemini._generate_food_uuid("gs://bucket-b/file.pdf", "Apple")
     assert uuid1 != uuid2
 
 
@@ -95,7 +99,7 @@ def test_transform_unknown_food_name_fallback(pipeline: IngestionPipeline):
     result = pipeline.transform(
         ExtractResponse(raw_items=raw, source_uri="gs://test.pdf")
     )
-    assert result.items[0].food_uuid == pipeline._generate_food_uuid(
+    assert result.items[0].food_uuid == pipeline._gemini._generate_food_uuid(
         "gs://test.pdf", "unknown"
     )
 
@@ -255,15 +259,15 @@ def test_verification_response_rejects_negative_items_count():
 
 
 def test_validate_trusted_bucket_passes_when_bucket_matches():
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     # Should not raise
-    pipeline._validate_trusted_bucket("gs://my-bucket/file.pdf")
+    pipeline._gcs.validate_trusted_bucket("gs://my-bucket/file.pdf")
 
 
 def test_validate_trusted_bucket_raises_when_bucket_differs():
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     with pytest.raises(ValueError) as exc_info:
-        pipeline._validate_trusted_bucket("gs://malicious-bucket/file.pdf")
+        pipeline._gcs.validate_trusted_bucket("gs://malicious-bucket/file.pdf")
     assert "Untrusted bucket: malicious-bucket" in str(exc_info.value)
 
 
@@ -271,7 +275,7 @@ def test_validate_trusted_bucket_raises_when_bucket_differs():
 
 
 def test_get_mime_type_returns_blob_content_type_when_present(mocker):
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     mock_blob = mocker.Mock()
     mock_blob.content_type = "application/pdf"
     mock_blob.size = 1024
@@ -279,9 +283,9 @@ def test_get_mime_type_returns_blob_content_type_when_present(mocker):
     mock_bucket.get_blob.return_value = mock_blob
     mock_client = mocker.Mock()
     mock_client.bucket.return_value = mock_bucket
-    pipeline._gcs_client = mock_client
+    pipeline._gcs._client = mock_client
 
-    result = pipeline._get_mime_type("gs://my-bucket/file.pdf")
+    result = pipeline._gcs.get_mime_type("gs://my-bucket/file.pdf")
 
     assert result == "application/pdf"
     mock_client.bucket.assert_called_once_with("my-bucket")
@@ -289,21 +293,21 @@ def test_get_mime_type_returns_blob_content_type_when_present(mocker):
 
 
 def test_get_mime_type_falls_back_to_default_when_blob_is_none(mocker):
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     mock_bucket = mocker.Mock()
     mock_bucket.get_blob.return_value = None
     mock_client = mocker.Mock()
     mock_client.bucket.return_value = mock_bucket
-    pipeline._gcs_client = mock_client
+    pipeline._gcs._client = mock_client
 
-    result = pipeline._get_mime_type("gs://my-bucket/file.pdf")
+    result = pipeline._gcs.get_mime_type("gs://my-bucket/file.pdf")
 
     assert result == "application/pdf"
     mock_bucket.get_blob.assert_called_once_with("file.pdf")
 
 
 def test_get_mime_type_falls_back_to_default_when_content_type_is_none(mocker):
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     mock_blob = mocker.Mock()
     mock_blob.content_type = None
     mock_blob.size = 1024
@@ -311,15 +315,15 @@ def test_get_mime_type_falls_back_to_default_when_content_type_is_none(mocker):
     mock_bucket.get_blob.return_value = mock_blob
     mock_client = mocker.Mock()
     mock_client.bucket.return_value = mock_bucket
-    pipeline._gcs_client = mock_client
+    pipeline._gcs._client = mock_client
 
-    result = pipeline._get_mime_type("gs://my-bucket/file.pdf")
+    result = pipeline._gcs.get_mime_type("gs://my-bucket/file.pdf")
 
     assert result == "application/pdf"
 
 
 def test_get_mime_type_falls_back_to_default_when_content_type_is_empty(mocker):
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     mock_blob = mocker.Mock()
     mock_blob.content_type = ""
     mock_blob.size = 1024
@@ -327,15 +331,15 @@ def test_get_mime_type_falls_back_to_default_when_content_type_is_empty(mocker):
     mock_bucket.get_blob.return_value = mock_blob
     mock_client = mocker.Mock()
     mock_client.bucket.return_value = mock_bucket
-    pipeline._gcs_client = mock_client
+    pipeline._gcs._client = mock_client
 
-    result = pipeline._get_mime_type("gs://my-bucket/file.pdf")
+    result = pipeline._gcs.get_mime_type("gs://my-bucket/file.pdf")
 
     assert result == "application/pdf"
 
 
 def test_get_mime_type_lazily_initializes_storage_client_when_missing(mocker):
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     mock_blob = mocker.Mock()
     mock_blob.content_type = "application/pdf"
     mock_blob.size = 1024
@@ -344,20 +348,21 @@ def test_get_mime_type_lazily_initializes_storage_client_when_missing(mocker):
     mock_client_instance = mocker.Mock()
     mock_client_instance.bucket.return_value = mock_bucket
     mock_storage_client_cls = mocker.patch(
-        "backend.smae_engine.source_code.main.storage.Client",
+        "backend.smae_engine.source_code.gcs_service.main.storage.Client",
         return_value=mock_client_instance,
     )
 
-    result = pipeline._get_mime_type("gs://my-bucket/file.pdf")
+    result = pipeline._gcs.get_mime_type("gs://my-bucket/file.pdf")
 
     assert result == "application/pdf"
     mock_storage_client_cls.assert_called_once_with()
-    assert pipeline._gcs_client is mock_client_instance
+    assert pipeline._gcs._client is mock_client_instance
 
 
 def test_get_mime_type_raises_when_file_exceeds_max_size(mocker):
-    settings = SmaeSettings(trusted_bucket="my-bucket", max_file_size_mb=1)
-    pipeline = IngestionPipeline(settings=settings)
+    pipeline = IngestionPipeline(
+        gcs_settings=GcsSettings(trusted_bucket="my-bucket", max_file_size_mb=1)
+    )
     mock_blob = mocker.Mock()
     mock_blob.content_type = "application/pdf"
     mock_blob.size = 2 * 1024 * 1024  # 2 MB > 1 MB limit
@@ -365,34 +370,34 @@ def test_get_mime_type_raises_when_file_exceeds_max_size(mocker):
     mock_bucket.get_blob.return_value = mock_blob
     mock_client = mocker.Mock()
     mock_client.bucket.return_value = mock_bucket
-    pipeline._gcs_client = mock_client
+    pipeline._gcs._client = mock_client
 
     with pytest.raises(ValueError, match="exceeds maximum size"):
-        pipeline._get_mime_type("gs://my-bucket/large.pdf")
+        pipeline._gcs.get_mime_type("gs://my-bucket/large.pdf")
 
 
 # --- _call_gemini ---
 
 
 def test_call_gemini_returns_parsed_json_on_happy_path(mocker):
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     mock_response = mocker.Mock()
     mock_response.text = '[{"food": "Apple"}]'
     mock_client = mocker.Mock()
     mock_client.models.generate_content.return_value = mock_response
     file_part = mocker.Mock()
 
-    result = pipeline._call_gemini(mock_client, file_part)
+    result = pipeline._gemini._call_gemini(mock_client, file_part)
 
     assert result == [{"food": "Apple"}]
     mock_client.models.generate_content.assert_called_once()
     call_kwargs = mock_client.models.generate_content.call_args.kwargs
-    assert call_kwargs["model"] == pipeline._settings.gemini_model
+    assert call_kwargs["model"] == pipeline._gemini._settings.model
     assert file_part in call_kwargs["contents"]
 
 
 def test_call_gemini_raises_json_decode_error_when_response_not_json(mocker):
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     mock_response = mocker.Mock()
     mock_response.text = "not valid json"
     mock_client = mocker.Mock()
@@ -400,24 +405,26 @@ def test_call_gemini_raises_json_decode_error_when_response_not_json(mocker):
     file_part = mocker.Mock()
 
     with pytest.raises(json.JSONDecodeError):
-        pipeline._call_gemini(mock_client, file_part)
+        pipeline._gemini._call_gemini(mock_client, file_part)
 
 
 # --- _build_client ---
 
 
 def test_build_client_initializes_genai_client_with_correct_args(mocker):
-    settings = SmaeSettings(trusted_bucket="my-bucket", gcp_location="us-east1")
-    pipeline = IngestionPipeline(settings=settings)
+    pipeline = IngestionPipeline(
+        gcs_settings=GcsSettings(trusted_bucket="my-bucket"),
+        gemini_settings=GeminiSettings(gcp_location="us-east1"),
+    )
     mocker.patch(
-        "backend.smae_engine.source_code.main.google.auth.default",
+        "backend.smae_engine.source_code.gemini_service.main.google.auth.default",
         return_value=(None, "test-project"),
     )
     mock_genai_client_cls = mocker.patch(
-        "backend.smae_engine.source_code.main.genai.Client"
+        "backend.smae_engine.source_code.gemini_service.main.genai.Client"
     )
 
-    pipeline._build_client()
+    pipeline._gemini._build_client()
 
     mock_genai_client_cls.assert_called_once_with(
         vertexai=True,
@@ -427,17 +434,17 @@ def test_build_client_initializes_genai_client_with_correct_args(mocker):
 
 
 def test_build_client_caches_client_across_calls(mocker):
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     mocker.patch(
-        "backend.smae_engine.source_code.main.google.auth.default",
+        "backend.smae_engine.source_code.gemini_service.main.google.auth.default",
         return_value=(None, "test-project"),
     )
     mock_genai_client_cls = mocker.patch(
-        "backend.smae_engine.source_code.main.genai.Client"
+        "backend.smae_engine.source_code.gemini_service.main.genai.Client"
     )
 
-    first = pipeline._build_client()
-    second = pipeline._build_client()
+    first = pipeline._gemini._build_client()
+    second = pipeline._gemini._build_client()
 
     assert mock_genai_client_cls.call_count == 1
     assert first is second
@@ -448,7 +455,7 @@ def test_build_client_caches_client_across_calls(mocker):
 
 def test_run_orchestrates_extract_transform_verify_in_order(mocker, sample_item):
     pipeline = IngestionPipeline(
-        settings=SmaeSettings(trusted_bucket="nutritional-data-sources")
+        gcs_settings=GcsSettings(trusted_bucket="nutritional-data-sources")
     )
     request = ExtractionRequest(gcs_uri="gs://nutritional-data-sources/sample.pdf")
     extract_response = ExtractResponse(
@@ -490,7 +497,7 @@ def test_run_orchestrates_extract_transform_verify_in_order(mocker, sample_item)
 
 
 def test_run_propagates_validation_error_without_calling_extract(mocker):
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     request = ExtractionRequest(gcs_uri="gs://other-bucket/file.pdf")
     mock_extract_parallel = mocker.patch.object(pipeline, "extract_parallel")
     mock_transform = mocker.patch.object(pipeline, "transform")
@@ -584,7 +591,7 @@ def test_extraction_request_rejects_gcs_uri_with_trailing_newline():
 
 
 def test_download_pdf_returns_bytes_from_gcs(mocker):
-    pipeline = IngestionPipeline(settings=SmaeSettings(trusted_bucket="my-bucket"))
+    pipeline = IngestionPipeline(gcs_settings=GcsSettings(trusted_bucket="my-bucket"))
     mock_blob = mocker.Mock()
     mock_blob.size = 1024
     mock_blob.download_as_bytes.return_value = b"pdf content"
@@ -592,28 +599,29 @@ def test_download_pdf_returns_bytes_from_gcs(mocker):
     mock_bucket.blob.return_value = mock_blob
     mock_client = mocker.Mock()
     mock_client.bucket.return_value = mock_bucket
-    pipeline._gcs_client = mock_client
+    pipeline._gcs._client = mock_client
 
-    result = pipeline._download_pdf("gs://my-bucket/file.pdf")
+    result = pipeline._gcs.download_pdf("gs://my-bucket/file.pdf")
 
-    assert result == b"pdf content"
+    assert result.pdf_bytes == b"pdf content"
     mock_blob.reload.assert_called_once()
     mock_blob.download_as_bytes.assert_called_once()
 
 
 def test_download_pdf_raises_when_file_exceeds_max_source_size(mocker):
-    settings = SmaeSettings(trusted_bucket="my-bucket", max_source_pdf_size_mb=1)
-    pipeline = IngestionPipeline(settings=settings)
+    pipeline = IngestionPipeline(
+        gcs_settings=GcsSettings(trusted_bucket="my-bucket", max_source_pdf_size_mb=1)
+    )
     mock_blob = mocker.Mock()
     mock_blob.size = 2 * 1024 * 1024
     mock_bucket = mocker.Mock()
     mock_bucket.blob.return_value = mock_blob
     mock_client = mocker.Mock()
     mock_client.bucket.return_value = mock_bucket
-    pipeline._gcs_client = mock_client
+    pipeline._gcs._client = mock_client
 
     with pytest.raises(ValueError, match="Source PDF exceeds"):
-        pipeline._download_pdf("gs://my-bucket/large.pdf")
+        pipeline._gcs.download_pdf("gs://my-bucket/large.pdf")
 
 
 # --- _resolve_pages ---
@@ -661,22 +669,22 @@ def test_resolve_pages_raises_when_specific_pages_exceed_document_length(pipelin
 
 
 def test_build_batches_splits_pages_into_groups(pipeline):
-    assert pipeline._build_batches([1, 2, 3, 4, 5], 2) == [[1, 2], [3, 4], [5]]
+    assert pipeline._gemini._build_batches([1, 2, 3, 4, 5], 2) == [[1, 2], [3, 4], [5]]
 
 
 def test_build_batches_single_batch_when_pages_fit(pipeline):
-    assert pipeline._build_batches([1, 2, 3], 5) == [[1, 2, 3]]
+    assert pipeline._gemini._build_batches([1, 2, 3], 5) == [[1, 2, 3]]
 
 
 def test_build_batches_one_page_per_batch_when_batch_size_is_one(pipeline):
-    assert pipeline._build_batches([1, 2, 3], 1) == [[1], [2], [3]]
+    assert pipeline._gemini._build_batches([1, 2, 3], 1) == [[1], [2], [3]]
 
 
 # --- _split_pdf_pages ---
 
 
 def test_split_pdf_pages_produces_pdf_with_correct_page_count(pipeline):
-    result = pipeline._split_pdf_pages(make_pdf(5), [1, 3, 5])
+    result = pipeline._gemini._split_pdf_pages(make_pdf(5), [1, 3, 5])
     reader = PdfReader(io.BytesIO(result))
     assert len(reader.pages) == 3
 
@@ -685,14 +693,16 @@ def test_split_pdf_pages_produces_pdf_with_correct_page_count(pipeline):
 
 
 def test_extract_single_batch_calls_gemini_with_pdf_bytes(mocker, pipeline):
-    mocker.patch.object(pipeline, "_build_client", return_value=mocker.Mock())
+    mocker.patch.object(pipeline._gemini, "_build_client", return_value=mocker.Mock())
     mock_part_cls = mocker.patch(
-        "backend.smae_engine.source_code.main.types.Part.from_bytes",
+        "backend.smae_engine.source_code.gemini_service.main.types.Part.from_bytes",
         return_value=mocker.Mock(),
     )
-    mocker.patch.object(pipeline, "_call_gemini", return_value=[{"food": "Apple"}])
+    mocker.patch.object(
+        pipeline._gemini, "_call_gemini", return_value=[{"food": "Apple"}]
+    )
 
-    result = pipeline._extract_single_batch(make_pdf(2), [1, 2])
+    result = pipeline._gemini._extract_single_batch(make_pdf(2), [1, 2])
 
     assert result == [{"food": "Apple"}]
     mock_part_cls.assert_called_once()
@@ -703,15 +713,19 @@ def test_extract_single_batch_calls_gemini_with_pdf_bytes(mocker, pipeline):
 
 
 def test_process_batches_parallel_merges_results_in_page_order(mocker):
-    settings = SmaeSettings(trusted_bucket="my-bucket", max_parallel_workers=2)
-    pipeline = IngestionPipeline(settings=settings)
+    pipeline = IngestionPipeline(
+        gcs_settings=GcsSettings(trusted_bucket="my-bucket"),
+        gemini_settings=GeminiSettings(max_parallel_workers=2),
+    )
 
     def fake_extract(pdf_bytes, pages):
         return [{"food": f"page-{p}"} for p in pages]
 
-    mocker.patch.object(pipeline, "_extract_single_batch", side_effect=fake_extract)
+    mocker.patch.object(
+        pipeline._gemini, "_extract_single_batch", side_effect=fake_extract
+    )
 
-    result = pipeline._process_batches_parallel(make_pdf(4), [[1, 2], [3, 4]])
+    result = pipeline._gemini._process_batches_parallel(make_pdf(4), [[1, 2], [3, 4]])
 
     assert result == [
         {"food": "page-1"},
@@ -726,7 +740,7 @@ def test_process_batches_parallel_merges_results_in_page_order(mocker):
 
 def test_run_routes_to_extract_parallel_when_page_range_given(mocker, sample_item):
     pipeline = IngestionPipeline(
-        settings=SmaeSettings(trusted_bucket="nutritional-data-sources")
+        gcs_settings=GcsSettings(trusted_bucket="nutritional-data-sources")
     )
     request = ExtractionRequest(
         gcs_uri="gs://nutritional-data-sources/smae.pdf",
@@ -760,7 +774,7 @@ def test_run_routes_to_extract_parallel_when_page_range_given(mocker, sample_ite
 
 def test_run_routes_to_extract_parallel_when_pages_list_given(mocker, sample_item):
     pipeline = IngestionPipeline(
-        settings=SmaeSettings(trusted_bucket="nutritional-data-sources")
+        gcs_settings=GcsSettings(trusted_bucket="nutritional-data-sources")
     )
     request = ExtractionRequest(
         gcs_uri="gs://nutritional-data-sources/smae.pdf",
@@ -796,8 +810,9 @@ def test_run_routes_to_extract_parallel_when_pages_list_given(mocker, sample_ite
 
 
 def test_download_pdf_raises_when_downloaded_bytes_exceed_limit(mocker):
-    settings = SmaeSettings(trusted_bucket="my-bucket", max_source_pdf_size_mb=1)
-    pipeline = IngestionPipeline(settings=settings)
+    pipeline = IngestionPipeline(
+        gcs_settings=GcsSettings(trusted_bucket="my-bucket", max_source_pdf_size_mb=1)
+    )
     mock_blob = mocker.Mock()
     mock_blob.size = 512 * 1024  # 0.5 MB — passes pre-check
     oversized_bytes = b"x" * (2 * 1024 * 1024)  # 2 MB actual payload
@@ -807,10 +822,10 @@ def test_download_pdf_raises_when_downloaded_bytes_exceed_limit(mocker):
     mock_bucket.blob.side_effect = [mock_blob, mock_pinned_blob]
     mock_client = mocker.Mock()
     mock_client.bucket.return_value = mock_bucket
-    pipeline._gcs_client = mock_client
+    pipeline._gcs._client = mock_client
 
     with pytest.raises(ValueError, match="Source PDF exceeds"):
-        pipeline._download_pdf("gs://my-bucket/file.pdf")
+        pipeline._gcs.download_pdf("gs://my-bucket/file.pdf")
 
 
 # --- Security: page_range 2000-page span cap (F-04) ---
@@ -863,14 +878,14 @@ class TestLoad:
     @pytest.fixture
     def pipeline_with_settings(self) -> IngestionPipeline:
         return IngestionPipeline(
-            settings=SmaeSettings(
-                trusted_bucket="nutritional-data-sources",
-                bq_project="test-project",
-                bq_dataset="nutrimental_information",
-                bq_table="food_equivalents",
-                bq_dead_letter_table="food_equivalents_dead_letter",
-                bq_batch_size=500,
-            )
+            gcs_settings=GcsSettings(trusted_bucket="nutritional-data-sources"),
+            bq_settings=BqSettings(
+                project="test-project",
+                dataset="nutrimental_information",
+                table="food_equivalents",
+                dead_letter_table="food_equivalents_dead_letter",
+                batch_size=500,
+            ),
         )
 
     @pytest.fixture
@@ -894,9 +909,11 @@ class TestLoad:
         mock_bq.query.return_value = mocker.Mock(**{"result.return_value": None})
         mock_bq.load_table_from_json.return_value = mock_job
 
-        pipeline_with_settings._bq_client = mock_bq
-        pipeline_with_settings._settings = pipeline_with_settings._settings.model_copy(
-            update={"bq_project": "test-project"}
+        pipeline_with_settings._bq._client = mock_bq
+        pipeline_with_settings._bq._settings = (
+            pipeline_with_settings._bq._settings.model_copy(
+                update={"project": "test-project"}
+            )
         )
 
         result = pipeline_with_settings.load(
@@ -927,9 +944,11 @@ class TestLoad:
             mock_dlt_job,  # DLT write succeeds
         ]
 
-        pipeline_with_settings._bq_client = mock_bq
-        pipeline_with_settings._settings = pipeline_with_settings._settings.model_copy(
-            update={"bq_project": "test-project"}
+        pipeline_with_settings._bq._client = mock_bq
+        pipeline_with_settings._bq._settings = (
+            pipeline_with_settings._bq._settings.model_copy(
+                update={"project": "test-project"}
+            )
         )
 
         result = pipeline_with_settings.load(
@@ -942,6 +961,58 @@ class TestLoad:
         assert result.dead_letter_rows == 1
         assert mock_bq.load_table_from_json.call_count == 2
 
+    def test_Load_ShouldReturnZeroDeadLetterRows_WhenDLTWriteAlsoFails(
+        self, mocker, pipeline_with_settings, sample_transform_response
+    ):
+        """Failure mode: both main load and DLT write fail; dead_letter_rows must be 0."""
+        from google.api_core.exceptions import GoogleAPIError
+
+        mock_bq = mocker.Mock()
+        mock_bq.query.return_value = mocker.Mock(**{"result.return_value": None})
+        mock_bq.load_table_from_json.side_effect = [
+            GoogleAPIError("main table failure"),
+            GoogleAPIError("DLT write failure"),
+        ]
+
+        pipeline_with_settings._bq._client = mock_bq
+        pipeline_with_settings._bq._settings = (
+            pipeline_with_settings._bq._settings.model_copy(
+                update={"project": "test-project"}
+            )
+        )
+
+        result = pipeline_with_settings.load(
+            sample_transform_response,
+            source_uri="gs://nutritional-data-sources/smae.pdf",
+        )
+
+        assert result.rows_inserted == 0
+        assert result.rows_failed == 1
+        assert result.dead_letter_rows == 0
+
+    def test_Load_ShouldSkipDeactivationQuery_WhenItemsListIsEmpty(
+        self, mocker, pipeline_with_settings
+    ):
+        """Edge case: empty items list must not trigger SCD deactivation query."""
+        mock_bq = mocker.Mock()
+        pipeline_with_settings._bq._client = mock_bq
+        pipeline_with_settings._bq._settings = (
+            pipeline_with_settings._bq._settings.model_copy(
+                update={"project": "test-project"}
+            )
+        )
+
+        result = pipeline_with_settings.load(
+            TransformResponse(items=[]),
+            source_uri="gs://nutritional-data-sources/smae.pdf",
+        )
+
+        assert result.rows_inserted == 0
+        assert result.rows_failed == 0
+        assert result.dead_letter_rows == 0
+        mock_bq.query.assert_not_called()
+        mock_bq.load_table_from_json.assert_not_called()
+
     def test_Load_ShouldRaiseRuntimeError_WhenBQClientFails(
         self, mocker, pipeline_with_settings, sample_transform_response
     ):
@@ -949,7 +1020,7 @@ class TestLoad:
         from google.auth.exceptions import TransportError
 
         mocker.patch(
-            "backend.smae_engine.source_code.main.google.auth.default",
+            "backend.smae_engine.source_code.bq_service.main.google.auth.default",
             side_effect=TransportError("Cannot reach metadata server"),
         )
 

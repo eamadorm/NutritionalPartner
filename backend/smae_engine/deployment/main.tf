@@ -4,14 +4,14 @@ provider "google" {
 }
 
 # ---------------------------------------------------------------------------
-# Service Account — dedicated identity for the SMAE Engine function
+# Service Account — dedicated identity for the SMAE Engine service
 # ---------------------------------------------------------------------------
 module "smae_engine_sa" {
   source       = "../../../infra/modules/iam-service-account"
   project_id   = var.project_id
   name         = var.sa_name
   display_name = "SMAE Engine SA"
-  description  = "Service account for the SMAE Engine Cloud Function"
+  description  = "Service account for the SMAE Engine Cloud Run service"
 
   iam_project_roles = {
     (var.project_id) = var.sa_roles
@@ -19,38 +19,36 @@ module "smae_engine_sa" {
 }
 
 # ---------------------------------------------------------------------------
-# Cloud Function v2 — HTTP-triggered, source-based SMAE extraction pipeline
+# Cloud Run v2 — HTTP-triggered, containerised SMAE extraction pipeline
 # ---------------------------------------------------------------------------
-module "smae_engine_function" {
-  source     = "../../../infra/modules/cloud-function-v2"
+module "smae_engine_service" {
+  source     = "../../../infra/modules/cloud-run-v2"
   project_id = var.project_id
   region     = var.region
-  name       = var.function_name
-
-  bucket_name = "${var.project_id}-gcf-source"
-  bucket_config = {
-    location = var.region
-  }
-
-  bundle_config = {
-    path = "../source_code"
-  }
-
-  function_config = {
-    entry_point     = "smae_handler"
-    runtime         = var.runtime
-    instance_count  = var.instance_count
-    memory_mb       = var.memory_mb
-    timeout_seconds = var.timeout_seconds
-  }
-
-  docker_repository_id = "projects/${var.project_id}/locations/${var.region}/repositories/${var.artifact_registry_name}"
-
-  iam = {
-    "roles/cloudfunctions.invoker" = ["allUsers"]
-  }
+  name       = var.function_name # Keep the name var for consistency
 
   service_account = module.smae_engine_sa.email
+
+  containers = {
+    smae-engine = {
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_registry_name}/${var.image_name}:${var.image_tag}"
+      resources = {
+        limits = {
+          cpu    = "1"
+          memory = "${var.memory_mb}Mi"
+        }
+      }
+    }
+  }
+
+  revision = {
+    max_instance_count = var.instance_count
+    timeout            = "${var.timeout_seconds}s"
+  }
+
+  iam = {
+    "roles/run.invoker" = ["allUsers"]
+  }
 
   depends_on = [module.smae_engine_sa]
 }

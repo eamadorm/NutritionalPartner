@@ -97,7 +97,7 @@ Tests must **never** appear in the CD pipeline — CI is the correctness gate. T
 - Terraform state: GCS bucket `<project-id>-tf-states`, path `/tfstates/<deployment_name>/tf.state`.
 - All Terraform uses [Cloud Foundation Fabric (CFF)](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric) modules.
 - **Regional Standard**: Default region is `us-central1`. Resources must use fallback logic: `specific_region` ?? `main_region` (`us-central1`).
-- **Module Vendoring**: All CFF modules are vendored locally in `infra/modules/` (v34.1.0).
+- **Module Vendoring**: All CFF modules are vendored locally in `infra/modules/` (v34.1.0). **Use Cloud Run v2 for all containerized deployables.**
 - Authentication: Application Default Credentials (ADC) only — never JSON credential files.
 - CI/CD: Cloud Build. Linting pipeline defined in `infra/ci-lint.yaml` runs Ruff, Bandit, Gitleaks, Semgrep, and ESLint.
 

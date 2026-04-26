@@ -12,7 +12,9 @@ module "artifact_registry" {
   location   = var.region
   name       = var.artifact_registry_name
   format = {
-    docker = {}
+    docker = {
+      standard = {}
+    }
   }
   description = "Docker images for NutritionalPartner deployables"
 }

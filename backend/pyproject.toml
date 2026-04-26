@@ -1,7 +1,7 @@
 [project]
 name = "nutritional-partner-backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "Backend for the Nutritional Partner project"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -17,9 +17,10 @@ smae = [
     "google-genai>=1.73.1",
     "loguru>=0.7.3",
     "pydantic>=2.13.3",
-    "pydantic-ai>=1.87.0",
     "pydantic-settings>=2.0.0",
     "google-cloud-bigquery>=3.41.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
 ]
 dev = ["pytest>=9.0.3", "pytest-mock>=3.0.0"]
 

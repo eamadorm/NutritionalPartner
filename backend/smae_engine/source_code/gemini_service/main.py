@@ -4,13 +4,17 @@ import random
 import threading
 import time
 import uuid
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import (
+    ThreadPoolExecutor,
+    TimeoutError as FutureTimeoutError,
+    as_completed,
+)
 from datetime import datetime, timezone
 from typing import Optional
 
 import google.auth
 from google import genai
-from google.api_core import exceptions as gapi_exceptions
+from google.genai import errors as genai_errors
 from google.genai import types
 from loguru import logger
 from pypdf import PdfReader, PdfWriter
@@ -140,22 +144,28 @@ class GeminiService:
         return VerificationResponse(status="valid", items_count=len(items))
 
     def _build_client(self) -> genai.Client:
-        """Initializes (and caches) the Vertex AI GenAI client using ADC."""
+        """Initializes (and caches) the Vertex AI GenAI client using ADC.
+
+        HttpOptions.timeout is in milliseconds; gemini_call_timeout_s is converted
+        on construction so all HTTP requests inherit the Cloud-Run-safe deadline.
+        """
         if self._client is None:
             with self._lock:
                 if self._client is None:
                     _, project_id = google.auth.default()
+                    timeout_ms = int(self._settings.gemini_call_timeout_s * 1000)
                     self._client = genai.Client(
                         vertexai=True,
                         project=project_id,
                         location=self._settings.gcp_location,
+                        http_options=types.HttpOptions(timeout=timeout_ms),
                     )
         return self._client
 
     def _call_gemini(self, client: genai.Client, file_part: types.Part) -> list[dict]:
         """
         Sends a document part to Gemini Flash and returns parsed JSON items.
-        Retries on ResourceExhausted with exponential backoff and jitter.
+        Retries on status codes 429, 500, 503, 504 with exponential backoff and jitter.
 
         Args:
             client: genai.Client -> Authenticated Vertex AI GenAI client.
@@ -183,7 +193,10 @@ class GeminiService:
                     ),
                 )
                 return json.loads(result.text)
-            except gapi_exceptions.ResourceExhausted:
+            except genai_errors.APIError as exc:
+                # 429=ResourceExhausted, 500=Internal, 503=Unavailable, 504=DeadlineExceeded
+                if exc.code not in (429, 500, 503, 504):
+                    raise
                 if attempt == self._settings.max_retries:
                     raise
                 delay = min(
@@ -192,8 +205,9 @@ class GeminiService:
                     self._settings.retry_max_delay_s,
                 )
                 logger.warning(
-                    f"Gemini ResourceExhausted (attempt {attempt + 1}/"
-                    f"{self._settings.max_retries + 1}); retrying in {delay:.1f}s"
+                    f"Gemini {exc.code} {exc.__class__.__name__} "
+                    f"(attempt {attempt + 1}/{self._settings.max_retries + 1}); "
+                    f"retrying in {delay:.1f}s"
                 )
                 time.sleep(delay)
         raise RuntimeError("Unreachable")
@@ -246,5 +260,14 @@ class GeminiService:
             }
             for future in as_completed(future_to_idx):
                 idx = future_to_idx[future]
-                results[idx] = future.result()
+                try:
+                    results[idx] = future.result(
+                        timeout=self._settings.batch_result_timeout_s
+                    )
+                except FutureTimeoutError:
+                    logger.error(
+                        f"Batch {idx} timed out after "
+                        f"{self._settings.batch_result_timeout_s}s"
+                    )
+                    raise
         return [item for idx in sorted(results) for item in results[idx]]

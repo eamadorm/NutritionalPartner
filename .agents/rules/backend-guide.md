@@ -37,7 +37,11 @@ All backend development must strictly adhere to these Python-specific protocols 
 - **MCP Servers**: Use the **MCP Python SDK** for Model Context Protocol implementations.
 - **Logging**: Use **loguru** for all logging tasks.
 
-### Naming & Type Hinting
+### Identity & IAM Permissions
+- **Application Default Credentials (ADC)**: Use ADC exclusively for authenticating with GCP services. Never use JSON keys.
+- **Permission Identification**: Developers MUST identify the IAM roles required for their code to run. 
+  - If using **BigQuery**, remember that `roles/bigquery.jobUser` is required at the project level to execute queries/loads.
+  - Document these requirements in the feature's `README.md` or as a comment in `config.py` to ensure they are codified in Terraform during Stage 2.
 - **Naming Conventions**: 
   - `CamelCase` for classes (e.g., `ProcessDataRequest`).
   - `snake_case` for variables, attributes, and methods.

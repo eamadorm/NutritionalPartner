@@ -1,9 +1,11 @@
 import io
 import json
+from concurrent.futures import TimeoutError as FutureTimeoutError
 import pytest
 from datetime import datetime, timezone
 from pydantic import ValidationError
 from pypdf import PdfReader, PdfWriter
+from google.genai import errors as genai_errors
 
 from backend.smae_engine.source_code.config import (
     BqSettings,
@@ -20,7 +22,7 @@ from backend.smae_engine.source_code.schemas import (
     TransformResponse,
     VerificationResponse,
 )
-from backend.smae_engine.source_code.main import IngestionPipeline
+from backend.smae_engine.source_code.pipeline import IngestionPipeline
 
 
 def make_pdf(num_pages: int) -> bytes:
@@ -408,6 +410,90 @@ def test_call_gemini_raises_json_decode_error_when_response_not_json(mocker):
         pipeline._gemini._call_gemini(mock_client, file_part)
 
 
+def test_call_gemini_retries_on_api_error_429_then_succeeds(mocker):
+    """Happy path retry: APIError(429) on first attempt, success on second."""
+    pipeline = IngestionPipeline(
+        gcs_settings=GcsSettings(trusted_bucket="my-bucket"),
+        gemini_settings=GeminiSettings(max_retries=2),
+    )
+    mock_response = mocker.Mock()
+    mock_response.text = '[{"food": "Rice"}]'
+    mock_client = mocker.Mock()
+    mock_client.models.generate_content.side_effect = [
+        genai_errors.APIError(429, {}),
+        mock_response,
+    ]
+    mocker.patch("backend.smae_engine.source_code.gemini_service.main.time.sleep")
+    file_part = mocker.Mock()
+
+    result = pipeline._gemini._call_gemini(mock_client, file_part)
+
+    assert result == [{"food": "Rice"}]
+    assert mock_client.models.generate_content.call_count == 2
+
+
+def test_call_gemini_does_not_retry_on_non_retryable_status(mocker):
+    """Failure mode: APIError with status 403 must be re-raised immediately."""
+    pipeline = IngestionPipeline(
+        gcs_settings=GcsSettings(trusted_bucket="my-bucket"),
+        gemini_settings=GeminiSettings(max_retries=3),
+    )
+    mock_client = mocker.Mock()
+    mock_client.models.generate_content.side_effect = genai_errors.APIError(403, {})
+    file_part = mocker.Mock()
+
+    with pytest.raises(genai_errors.APIError) as exc_info:
+        pipeline._gemini._call_gemini(mock_client, file_part)
+
+    assert exc_info.value.code == 403
+    assert mock_client.models.generate_content.call_count == 1
+
+
+def test_call_gemini_exhausts_retries_and_reraises(mocker):
+    """Failure mode: APIError(429) persists through all attempts; final raise propagates."""
+    pipeline = IngestionPipeline(
+        gcs_settings=GcsSettings(trusted_bucket="my-bucket"),
+        gemini_settings=GeminiSettings(max_retries=2),
+    )
+    mock_client = mocker.Mock()
+    mock_client.models.generate_content.side_effect = genai_errors.APIError(429, {})
+    mocker.patch("backend.smae_engine.source_code.gemini_service.main.time.sleep")
+    file_part = mocker.Mock()
+
+    with pytest.raises(genai_errors.APIError) as exc_info:
+        pipeline._gemini._call_gemini(mock_client, file_part)
+
+    assert exc_info.value.code == 429
+    # max_retries=2 means 3 total attempts (attempts 0, 1, 2)
+    assert mock_client.models.generate_content.call_count == 3
+
+
+def test_process_batches_parallel_raises_when_future_times_out(mocker):
+    """Failure mode: future.result() TimeoutError propagates out of _process_batches_parallel."""
+    pipeline = IngestionPipeline(
+        gcs_settings=GcsSettings(trusted_bucket="my-bucket"),
+        gemini_settings=GeminiSettings(max_parallel_workers=2),
+    )
+    # Directly inject a FutureTimeoutError via the future mock so no real sleep is needed.
+    mock_future = mocker.Mock()
+    mock_future.result.side_effect = FutureTimeoutError()
+    mock_executor = mocker.MagicMock()
+    mock_executor.__enter__ = mocker.Mock(return_value=mock_executor)
+    mock_executor.__exit__ = mocker.Mock(return_value=False)
+    mock_executor.submit.return_value = mock_future
+    mocker.patch(
+        "backend.smae_engine.source_code.gemini_service.main.ThreadPoolExecutor",
+        return_value=mock_executor,
+    )
+    mocker.patch(
+        "backend.smae_engine.source_code.gemini_service.main.as_completed",
+        return_value=[mock_future],
+    )
+
+    with pytest.raises(FutureTimeoutError):
+        pipeline._gemini._process_batches_parallel(make_pdf(1), [[1]])
+
+
 # --- _build_client ---
 
 
@@ -426,11 +512,11 @@ def test_build_client_initializes_genai_client_with_correct_args(mocker):
 
     pipeline._gemini._build_client()
 
-    mock_genai_client_cls.assert_called_once_with(
-        vertexai=True,
-        project="test-project",
-        location="us-east1",
-    )
+    call_kwargs = mock_genai_client_cls.call_args.kwargs
+    assert call_kwargs["vertexai"] is True
+    assert call_kwargs["project"] == "test-project"
+    assert call_kwargs["location"] == "us-east1"
+    assert call_kwargs["http_options"].timeout == int(3500.0 * 1000)
 
 
 def test_build_client_caches_client_across_calls(mocker):

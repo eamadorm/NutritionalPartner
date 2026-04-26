@@ -24,6 +24,10 @@ All feature development must strictly follow the **`@.agents/rules/development-g
 #### **Stage 2 (Part B): Deployment (Terraform & CI/CD)**
 - **Workflow**: For executing the deployment phase, applying Terraform (CFF), and updating CI/CD triggers, you MUST trigger the specialized skill:
   - **Skill**: `@.agents/skills/deployment/SKILL.md`
+- **CI/CD Separation**: CI runs tests + docker build (local) + `terraform validate`. CD runs docker build + push + `terraform apply` only — **no tests in CD**.
+- **SA Permissions**: Before finalizing any CI/CD pipeline, verify the executing service account (`cicd-pipeline-sa`) has all required IAM roles. Missing roles must be added to `infra/scripts/bootstrap.sh` — **never to Terraform**.
+- **Regional Standard**: All resources must deploy to `us-central1` by default. Any regional variation must be explicitly defined via variables with a fallback to the main region.
+- **Module Vendoring**: All CFF modules must be vendored locally in `infra/modules/` from a stable version (v34.1.0) to ensure reliable deployments. **Cloud Run v2 is the project standard for containerized deployments.**
 
 ---
 

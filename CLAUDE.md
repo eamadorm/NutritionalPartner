@@ -82,11 +82,40 @@ Every deployable feature follows a mandatory two-issue, two-stage flow. **Stage 
 - **Stage 1 – Part A (Prototyping)**: Logic lives in `backend/<name>/source_code/`. GCP resources are provisioned via `create_resources.sh` using `gcloud` commands only. Verified via a Jupyter notebook in `notebooks/<name>/`. Manual resources are deleted via `delete_resources.sh` before Stage 1 DoD.
 - **Stage 2 – Part B (Deployment)**: Logic is codified in Terraform (Cloud Foundation Fabric modules) at `backend/<name>/deployment/`. CI/CD triggers are managed exclusively via `infra/scripts/create_cicd_triggers.sh` — **never via Terraform**.
 
+### CI/CD Responsibility Separation
+
+| Pipeline | Responsibilities |
+|----------|-----------------|
+| CI (`cloudbuild-ci.yaml`) | Tests · Docker build (local, no push) · `terraform validate` |
+| CD (`cloudbuild-cd.yaml`) | Docker build + push · `terraform init` + `terraform apply` |
+
+Tests must **never** appear in the CD pipeline — CI is the correctness gate. The `terraform validate` step in CI (with `-backend=false`) is the CD pre-flight check. If the CI/CD service account (`cicd-pipeline-sa`) lacks permissions for any step, add the missing role to `infra/scripts/bootstrap.sh` — never to Terraform.
+
+Minimal CD step pattern:
+```yaml
+substitutions:
+  _REGION: us-central1
+steps:
+  - name: 'hashicorp/terraform:1.9'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        terraform init \
+          -backend-config="bucket=$$_PROJECT_ID-tf-states" \
+          -backend-config="prefix=tfstates/<deployment_name>/tf.state" && \
+        terraform apply -auto-approve \
+          -var="image_tag=$SHORT_SHA" \
+          -var="region=$_REGION"
+```
+
 ### GCP Infrastructure
 
 - Cloud Provider: GCP exclusively.
 - Terraform state: GCS bucket `<project-id>-tf-states`, path `/tfstates/<deployment_name>/tf.state`.
 - All Terraform uses [Cloud Foundation Fabric (CFF)](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric) modules.
+- **Regional Standard**: Default region is `us-central1`. Resources must use fallback logic: `specific_region` ?? `main_region` (`us-central1`).
+- **Module Vendoring**: All CFF modules are vendored locally in `infra/modules/` (v34.1.0). **Use Cloud Run v2 for all containerized deployables.**
 - Authentication: Application Default Credentials (ADC) only — never JSON credential files.
 - CI/CD: Cloud Build. Linting pipeline defined in `infra/ci-lint.yaml` runs Ruff, Bandit, Gitleaks, Semgrep, and ESLint.
 
@@ -134,6 +163,23 @@ Notebooks live at `notebooks/<deployable_name>/<notebook_name>.ipynb`. They must
 import sys; sys.path.append("<relative_path_to_repo_root>")
 ```
 to import project modules (e.g., `sys.path.append("../..")` for two levels deep). Notebooks must demonstrate successful execution, edge cases, and data validation.
+
+## Mandatory Subagent Protocol
+
+On **every** user prompt, evaluate the available subagents before composing a reply. Launch any that match the task — do not skip:
+
+| Trigger | Agent |
+|---------|-------|
+| Writing or reviewing backend Python code | `backend-dev-specialist` |
+| Writing or reviewing frontend code | `senior-frontend-dev` |
+| Any security-sensitive code (auth, input handling, IAM, secrets) | `cybersec-sentinel` |
+| Terraform, Cloud Build, Docker, GCP infra | `devops-engineer` |
+| Architecture or technology decisions | `software-architect` |
+| New or modified code that needs validation | `test-runner` |
+| Codebase exploration spanning multiple files | `Explore` |
+| Implementation planning before coding | `Plan` |
+
+Multiple agents may run in parallel for independent concerns. Only skip if the prompt is purely conversational with zero technical content.
 
 ## Agent Rules Reference
 

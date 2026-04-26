@@ -1,0 +1,37 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  # 1. Run SMAE Engine unit tests
+  - name: "ghcr.io/astral-sh/uv:python3.13-bookworm-slim"
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        cd backend
+        uv run --group smae --group dev pytest ../tests/backend/smae_engine/
+    id: "smae-engine-tests"
+
+  # 2. Validate Docker image builds successfully (local, no push)
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - -t
+      - smae-engine:ci-validation
+      - -f
+      - backend/smae_engine/deployment/Dockerfile
+      - backend/
+    id: "smae-engine-docker-build-local"
+
+  # 3. Validate Terraform configuration — confirms CD will execute correctly
+  - name: "hashicorp/terraform:1.9"
+    entrypoint: sh
+    args:
+      - -c
+      - |
+        cd backend/smae_engine/deployment
+        terraform init -backend=false
+        terraform validate
+    id: "smae-engine-tf-validate"
+    waitFor:
+      - "smae-engine-docker-build-local"

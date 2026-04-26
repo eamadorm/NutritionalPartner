@@ -123,7 +123,9 @@ class BqService:
         ]
         job_config = bigquery.QueryJobConfig(query_parameters=query_params)
         logger.debug(f"SCD Type 2: deactivating {len(uuids)} previous rows.")
-        bq.query(query, job_config=job_config).result()
+        bq.query(query, job_config=job_config).result(
+            timeout=self._settings.job_timeout_s
+        )
 
     def _execute_load_job(
         self, bq: bigquery.Client, table_id: str, rows: list[dict]
@@ -148,7 +150,7 @@ class BqService:
             batch = rows[start : start + self._settings.batch_size]
             try:
                 job = bq.load_table_from_json(batch, table_id, job_config=job_config)
-                job.result()
+                job.result(timeout=self._settings.job_timeout_s)
                 inserted += len(batch)
                 logger.debug(f"BQ batch [{start}:{start + len(batch)}] loaded OK.")
             except Exception as exc:
@@ -193,7 +195,7 @@ class BqService:
         )
         try:
             job = bq.load_table_from_json(dlt_rows, dlt_id, job_config=job_config)
-            job.result()
+            job.result(timeout=self._settings.job_timeout_s)
             logger.warning(f"Dead-lettered {len(dlt_rows)} rows to {dlt_id}.")
             return len(dlt_rows)
         except Exception as exc:

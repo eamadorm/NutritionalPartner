@@ -1,0 +1,1 @@
+- [SMAE Engine Stage 2 Audit Results](project_smae_audit.md) — gate PASS; 2 Medium residual risks; key patterns to watch for regression

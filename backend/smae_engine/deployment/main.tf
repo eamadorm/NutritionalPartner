@@ -47,9 +47,6 @@ module "smae_engine_service" {
     timeout            = "${var.timeout_seconds}s"
   }
 
-  iam = {
-    "roles/run.invoker" = ["allUsers"]
-  }
 
   depends_on = [module.smae_engine_sa]
 }

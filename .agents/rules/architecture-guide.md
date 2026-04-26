@@ -14,7 +14,6 @@ Act as a Senior Full-Stack Architect (10+ years experience). Follow these steps 
 - **No Invention**: Never invent library functions, classes, or methods. All code must be based on valid, documented standards.
 - Ensure all implementations follow the process defined in `@.agents/rules/development-guide.md`.
 - **Mandatory Consultation**: This guide MUST be read whenever new features are created.
-- **Issue Reconciliation**: During any update, check all associated GitHub issues to ensure they perfectly match the strategy.
 
 ### 2. Implementation Planning & Execution
 - **Strategy Selection**: For all technical designs, issue splitting (Part A/B), and milestone management, you MUST trigger the specialized skill:

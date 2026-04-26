@@ -99,11 +99,19 @@ When writing or reviewing any CI/CD pipeline, verify the executing SA has all re
 
 - GCS read/write for Terraform state bucket
 - Artifact Registry push (Docker image publication)
-- Cloud Functions deploy / update
-- IAM role bindings (to create/update per-function SAs)
-- Service account impersonation
+- Cloud Run / Cloud Functions deploy and update
+- IAM role bindings (to create/update per-function/service SAs)
+- Service account impersonation (`roles/iam.serviceAccountUser`)
+- Service account management (`roles/iam.serviceAccountAdmin`)
+
+**Mandatory Check**: Whenever creating a new deployable with its own Service Account and IAM roles, you MUST verify that the CI/CD SA (`cicd-pipeline-sa`) has the necessary permissions (e.g., `iam.serviceAccounts.create`, `iam.serviceAccounts.actAs`) to fully provision and configure the new service.
 
 **If any permission is missing**: add the role to the `ROLES` array in `infra/scripts/bootstrap.sh` — **never in Terraform**. `bootstrap.sh` is the single source of truth for CI/CD SA permissions; the SA (`cicd-pipeline-sa`) is defined and granted roles there exclusively.
+
+#### Shared Resources vs. Local Deployment
+Before adding any resource to a deployable's `deployment/` folder, perform a **Global Context Check**:
+- **Shared Resources**: If a resource (GCS bucket, BigQuery dataset, Artifact Registry) is intended to be used by **multiple deployables** or represents **foundational infrastructure**, it MUST be defined in `infra/shared_resources/`.
+- **Local Resources**: Only resources strictly dedicated to a single deployable (e.g., the specific Cloud Run service, its dedicated SA, and its IAM bindings) should reside in the deployable's `deployment/` folder.
 
 #### CD Pipeline — Terraform deploy pattern
 The CD pipeline (`cloudbuild-cd.yaml`) must deploy via `terraform init` + `terraform apply`. **Never use `gcloud functions deploy` or equivalent imperative deploy commands in the CD pipeline.**

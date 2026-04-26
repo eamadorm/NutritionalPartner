@@ -13,6 +13,7 @@ Follow these protocols for Infrastructure as Code (IaC) and CI/CD orchestration:
 - **Terraform Standard**:
   - Use [Cloud Foundation Fabric (CFF)](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric) modules for all resources.
   - Always pin CFF modules to an explicit version tag (e.g. `?ref=v34.1.0`). **Never use a floating `main` ref.**
+  - **Provider Versioning**: All `required_providers` blocks must use a version constraint compatible with the vendored CFF modules. The project standard is `">= 5.43, < 6.0"` for both `google` and `google-beta` providers. Avoid using `">= 6.0"` until the vendored modules are upgraded.
   - **Module Vendoring**: To ensure maximum stability and bypass download issues, foundational modules from the Cloud Foundation Fabric (CFF) repository must be downloaded and stored locally in `infra/modules/`. Use the latest stable version (e.g., `v34.1.0`). Specific deployables must reference these local modules. **Cloud Run v2 is preferred for all containerized architectures.**
   - Prioritize Terraform over `gcloud` commands for resource provisioning.
 - **State Management**:
